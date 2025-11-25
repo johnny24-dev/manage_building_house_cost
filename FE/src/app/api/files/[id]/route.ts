@@ -22,8 +22,24 @@ export async function GET(
       );
     }
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000/api';
-    const backendUrl = `${API_URL}/designs/file/${id}`;
+    // Trong Docker, Next.js API route (server-side) cần kết nối đến backend service
+    // Sử dụng tên service 'backend' thay vì 'localhost' khi chạy trong Docker
+    // Ưu tiên biến môi trường BACKEND_INTERNAL_URL (cho server-side) hoặc NEXT_PUBLIC_API_URL
+    let backendBaseUrl = process.env.BACKEND_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000/api';
+    
+    // Nếu đang chạy trong Docker và NEXT_PUBLIC_API_URL chứa localhost, thay bằng tên service
+    if (backendBaseUrl.includes('localhost:9000')) {
+      backendBaseUrl = backendBaseUrl.replace('localhost:9000', 'backend:9000');
+    }
+    
+    // Đảm bảo URL có /api ở cuối
+    if (!backendBaseUrl.endsWith('/api')) {
+      backendBaseUrl = backendBaseUrl.replace(/\/api\/?$/, '') + '/api';
+    }
+    
+    const backendUrl = `${backendBaseUrl}/designs/file/${id}`;
+    
+    console.log('[PDF Proxy] Backend URL:', backendUrl);
 
     // Fetch PDF từ backend với token trong header
     const response = await fetch(backendUrl, {
@@ -57,10 +73,26 @@ export async function GET(
         'X-Content-Type-Options': 'nosniff',
       },
     });
-  } catch (error) {
-    console.error('Error proxying PDF:', error);
+  } catch (error: any) {
+    console.error('[PDF Proxy] Error proxying PDF:', error);
+    console.error('[PDF Proxy] Error details:', {
+      message: error?.message,
+      cause: error?.cause,
+      code: error?.code,
+      stack: error?.stack,
+    });
+    
+    // Trả về thông báo lỗi chi tiết hơn cho debugging
+    const errorMessage = error?.cause?.code === 'ECONNREFUSED' 
+      ? 'Không thể kết nối đến backend server. Vui lòng kiểm tra backend có đang chạy không.'
+      : error?.message || 'Internal server error';
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        message: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? error?.message : undefined,
+      },
       { status: 500 }
     );
   }

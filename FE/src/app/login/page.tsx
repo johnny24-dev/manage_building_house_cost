@@ -5,7 +5,7 @@ import { useAuth } from '@/stores/AuthContext';
 import { useRouter } from 'next/navigation';
 import AuthForm from '@/components/auth/AuthForm';
 import Link from 'next/link';
-import { Home } from 'lucide-react';
+import { Home, Sparkles } from 'lucide-react';
 
 export default function LoginPage() {
   const { login, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -21,11 +21,14 @@ export default function LoginPage() {
   }, [isAuthenticated, authLoading, router]);
 
   if (authLoading || isAuthenticated) {
-    return null;
+    return (
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
 
   const handleSubmit = async (data: any) => {
-    console.log('handleSubmit', data);
     setIsLoading(true);
     setError('');
 
@@ -39,19 +42,28 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
+
+      <div className="w-full max-w-md relative z-10">
         {/* Logo/Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-lg">
-            <Home className="w-8 h-8 text-white" />
+        <div className="text-center mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-linear-to-br from-blue-600 to-indigo-600 rounded-2xl mb-4 shadow-xl transform hover:scale-105 transition-transform duration-300">
+            <Home className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Đăng nhập</h1>
-          <p className="text-gray-600">Chào mừng bạn trở lại!</p>
+          <h1 className="text-3xl sm:text-4xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+            Đăng nhập
+          </h1>
+          <p className="text-gray-600 text-sm sm:text-base">Chào mừng bạn trở lại!</p>
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl p-6 sm:p-8 border border-white/20 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <AuthForm
             mode="login"
             onSubmit={handleSubmit}
@@ -66,7 +78,11 @@ export default function LoginPage() {
                 <div className="w-full border-t border-gray-200"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">hoặc</span>
+                <span className="px-3 bg-white text-gray-500 flex items-center gap-2">
+                  <Sparkles className="w-3 h-3" />
+                  hoặc
+                  <Sparkles className="w-3 h-3" />
+                </span>
               </div>
             </div>
           </div>
@@ -77,9 +93,10 @@ export default function LoginPage() {
               Chưa có tài khoản?{' '}
               <Link
                 href="/register"
-                className="font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                className="font-semibold text-blue-600 hover:text-indigo-600 transition-colors inline-flex items-center gap-1 group"
               >
                 Đăng ký ngay
+                <span className="group-hover:translate-x-1 transition-transform inline-block">→</span>
               </Link>
             </p>
           </div>

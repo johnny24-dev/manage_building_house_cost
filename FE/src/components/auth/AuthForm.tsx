@@ -135,8 +135,15 @@ export default function AuthForm({ mode, onSubmit, isLoading: externalLoading, e
     <form onSubmit={handleSubmit} className="space-y-5">
       {/* Error message */}
       {finalError && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-600">{finalError}</p>
+        <div className="p-4 bg-linear-to-r from-red-50 to-red-100 border-l-4 border-red-500 rounded-lg shadow-sm animate-in fade-in">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0">
+              <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <p className="text-sm font-medium text-red-800 flex-1">{finalError}</p>
+          </div>
         </div>
       )}
 
@@ -153,7 +160,7 @@ export default function AuthForm({ mode, onSubmit, isLoading: externalLoading, e
 
       {/* Password field */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
           Mật khẩu
         </label>
         <div className="relative">
@@ -163,14 +170,14 @@ export default function AuthForm({ mode, onSubmit, isLoading: externalLoading, e
             onChange={(e) => handleChange('password', e.target.value)}
             placeholder="Nhập mật khẩu"
             disabled={finalIsLoading}
-            className={`w-full px-4 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.password ? 'border-red-500' : 'border-gray-300'
+            className={`w-full px-4 py-3 pr-12 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+              errors.password ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-gray-400 focus:border-blue-500'
             } ${finalIsLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-md hover:bg-gray-100"
             disabled={finalIsLoading}
           >
             {showPassword ? (
@@ -181,14 +188,14 @@ export default function AuthForm({ mode, onSubmit, isLoading: externalLoading, e
           </button>
         </div>
         {errors.password && (
-          <p className="mt-1 text-sm text-red-500">{errors.password}</p>
+          <p className="mt-1.5 text-sm text-red-600 font-medium animate-in fade-in">{errors.password}</p>
         )}
       </div>
 
       {/* Confirm Password field (only for register) */}
       {mode === 'register' && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
             Xác nhận mật khẩu
           </label>
           <div className="relative">
@@ -198,15 +205,15 @@ export default function AuthForm({ mode, onSubmit, isLoading: externalLoading, e
               onChange={(e) => handleChange('confirmPassword', e.target.value)}
               placeholder="Nhập lại mật khẩu"
               disabled={finalIsLoading}
-              className={`w-full px-4 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+              className={`w-full px-4 py-3 pr-12 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                errors.confirmPassword ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-gray-400 focus:border-blue-500'
               } ${finalIsLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             />
             <button
               type="button"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            disabled={finalIsLoading}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-md hover:bg-gray-100"
+              disabled={finalIsLoading}
             >
               {showConfirmPassword ? (
                 <EyeOff className="w-5 h-5" />
@@ -216,7 +223,7 @@ export default function AuthForm({ mode, onSubmit, isLoading: externalLoading, e
             </button>
           </div>
           {errors.confirmPassword && (
-            <p className="mt-1 text-sm text-red-500">{errors.confirmPassword}</p>
+            <p className="mt-1.5 text-sm text-red-600 font-medium animate-in fade-in">{errors.confirmPassword}</p>
           )}
         </div>
       )}
@@ -224,16 +231,19 @@ export default function AuthForm({ mode, onSubmit, isLoading: externalLoading, e
       {/* Submit button */}
       <Button
         type="submit"
-        className="w-full"
+        className="w-full py-3 text-base font-semibold shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
         disabled={finalIsLoading}
       >
         {finalIsLoading ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin inline" />
-            Đang xử lý...
-          </>
+          <span className="flex items-center justify-center gap-2">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span>Đang xử lý...</span>
+          </span>
         ) : (
-          mode === 'login' ? 'Đăng nhập' : 'Đăng ký'
+          <span className="flex items-center justify-center gap-2">
+            {mode === 'login' ? 'Đăng nhập' : 'Đăng ký'}
+            <span className="text-lg">→</span>
+          </span>
         )}
       </Button>
     </form>
