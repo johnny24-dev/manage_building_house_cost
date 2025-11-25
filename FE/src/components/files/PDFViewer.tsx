@@ -1,125 +1,186 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
-import { X, Maximize2, Minimize2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
-
-// Import CSS cho react-pdf (nếu cần)
-try {
-  require('react-pdf/dist/esm/Page/AnnotationLayer.css');
-  require('react-pdf/dist/esm/Page/TextLayer.css');
-} catch (e) {
-  // CSS không bắt buộc, có thể bỏ qua
-}
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { X, Loader2, AlertCircle, Download, RefreshCw, ZoomIn, ZoomOut, Maximize2, Minimize2, FileText } from 'lucide-react';
 import { DesignFile } from '@/services/file.service';
 import fileService from '@/services/file.service';
-
-// Set up PDF.js worker
-// Sử dụng version từ pdfjs để đảm bảo khớp với react-pdf
-if (typeof window !== 'undefined') {
-  // Sử dụng version từ pdfjs để tự động match với react-pdf
-  // react-pdf sử dụng pdfjs-dist@5.4.296, worker đã được copy từ version đó
-  // Worker file: node_modules/react-pdf/node_modules/pdfjs-dist/build/pdf.worker.min.mjs -> public/pdf.worker.min.mjs
-  pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
-}
+import { useToast } from '@/components/ui/Toast';
 
 interface PDFViewerProps {
-  file: DesignFile;
+  file: DesignFile | null;
+  isOpen: boolean;
   onClose: () => void;
 }
 
-export default function PDFViewer({ file, onClose }: PDFViewerProps) {
-  const [numPages, setNumPages] = useState<number>(0);
-  const [pageNumber, setPageNumber] = useState(1);
-  const [scale, setScale] = useState(1.0);
-  const [rotation, setRotation] = useState(0);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string>('');
+export default function PDFViewer({ file, isOpen, onClose }: PDFViewerProps) {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [width, setWidth] = useState<number>(800);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [zoom, setZoom] = useState(100);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { showToast } = useToast();
 
-  // Load PDF file với authentication headers
+  // Detect mobile
   useEffect(() => {
-    let blobUrl: string | null = null;
-    let isCancelled = false;
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+      // Auto reset zoom to fit on mobile
+      if (window.innerWidth < 768 && zoom === 100) {
+        setZoom(75); // Default smaller zoom for mobile
+      }
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen || !file) {
+      setPdfUrl(null);
+      setError(null);
+      setRetryCount(0);
+      return;
+    }
+
+    loadPDF();
+  }, [isOpen, file]);
+
+  const loadPDF = async () => {
+    if (!file) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Chưa đăng nhập. Vui lòng đăng nhập lại.');
+      }
+
+      const fileUrl = fileService.getFileUrl(file.id);
+      
+      // Fetch PDF với token
+      const response = await fetch(fileUrl, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/pdf',
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+        }
+        if (response.status === 404) {
+          throw new Error('File không tồn tại trên server.');
+        }
+        throw new Error(`Không thể tải file (${response.status})`);
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      setPdfUrl(url);
+    } catch (err: any) {
+      console.error('[PDFViewer] Error loading PDF:', err);
+      setError(err.message || 'Không thể tải file PDF');
+      showToast({
+        type: 'error',
+        title: 'Lỗi tải file',
+        description: err.message || 'Không thể tải file PDF',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRetry = () => {
+    setRetryCount((prev) => prev + 1);
+    loadPDF();
+  };
+
+  const handleDownload = () => {
+    if (!pdfUrl || !file) return;
     
-    const loadPdfFile = async () => {
-      try {
-        setIsLoading(true);
-        setError('');
-        
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('Chưa đăng nhập. Vui lòng đăng nhập lại.');
-        }
-        
-        const fileUrl = fileService.getFileUrl(file.id);
-        console.log('Loading PDF from:', fileUrl);
-        
-        // Fetch file với authentication headers
-        const response = await fetch(fileUrl, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/pdf',
-          },
-          credentials: 'include',
-          cache: 'no-cache', // Đảm bảo luôn fetch mới
+    const link = document.createElement('a');
+    link.href = pdfUrl;
+    link.download = file.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showToast({
+      type: 'success',
+      title: 'Đang tải xuống',
+      description: file.name,
+    });
+  };
+
+  const handleZoomIn = () => {
+    setZoom((prev) => Math.min(prev + (isMobile ? 10 : 25), 200));
+  };
+
+  const handleZoomOut = () => {
+    setZoom((prev) => Math.max(prev - (isMobile ? 10 : 25), 50));
+  };
+
+  const handleZoomReset = () => {
+    setZoom(isMobile ? 75 : 100);
+  };
+
+  const handleZoomFit = () => {
+    // Auto fit to width
+    if (containerRef.current) {
+      const containerWidth = containerRef.current.clientWidth;
+      const containerHeight = containerRef.current.clientHeight;
+      // Estimate PDF width (A4 is ~595px at 100%, height ~842px)
+      const estimatedPdfWidth = 595;
+      const estimatedPdfHeight = 842;
+      
+      // Calculate zoom to fit width or height (whichever is smaller)
+      const widthZoom = Math.floor((containerWidth / estimatedPdfWidth) * 100);
+      const heightZoom = Math.floor((containerHeight / estimatedPdfHeight) * 100);
+      const fitZoom = Math.min(widthZoom, heightZoom) - 5; // -5 for padding
+      
+      setZoom(Math.max(50, Math.min(fitZoom, 200)));
+    } else {
+      setZoom(isMobile ? 75 : 100);
+    }
+  };
+
+  const handleFullscreen = () => {
+    if (!containerRef.current) return;
+
+    // Toggle browser native fullscreen
+    if (!document.fullscreenElement) {
+      if (containerRef.current.requestFullscreen) {
+        containerRef.current.requestFullscreen().catch((err) => {
+          console.warn('Error attempting to enable fullscreen:', err);
         });
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-          } else if (response.status === 403) {
-            throw new Error('Bạn không có quyền xem file này.');
-          } else if (response.status === 404) {
-            throw new Error('File không tồn tại.');
-          } else {
-            throw new Error(`Lỗi khi tải file: ${response.status} ${response.statusText}`);
-          }
-        }
-
-        // Kiểm tra content type
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/pdf')) {
-          console.warn('Unexpected content type:', contentType);
-        }
-
-        // Convert response sang blob
-        const blob = await response.blob();
-        
-        if (isCancelled) {
-          URL.revokeObjectURL(URL.createObjectURL(blob));
-          return;
-        }
-        
-        // Tạo blob URL để PDF.js có thể load
-        blobUrl = URL.createObjectURL(blob);
-        setPdfUrl(blobUrl);
-        console.log('PDF loaded successfully, blob URL created');
-      } catch (err: any) {
-        if (isCancelled) return;
-        
-        console.error('Error loading PDF:', err);
-        const errorMessage = err.message || 'Không thể tải file PDF. Vui lòng thử lại.';
-        setError(errorMessage);
-        setIsLoading(false);
       }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
     };
 
-    loadPdfFile();
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
-    // Cleanup: revoke blob URL khi component unmount hoặc file thay đổi
-    return () => {
-      isCancelled = true;
-      if (blobUrl) {
-        URL.revokeObjectURL(blobUrl);
-      }
-    };
-  }, [file.id]);
-
-  // Cleanup blob URL khi pdfUrl thay đổi hoặc component unmount
+  // Cleanup blob URL khi component unmount hoặc đóng modal
   useEffect(() => {
     return () => {
       if (pdfUrl) {
@@ -128,255 +189,299 @@ export default function PDFViewer({ file, onClose }: PDFViewerProps) {
     };
   }, [pdfUrl]);
 
+  // Prevent body scroll when viewer is open
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
     return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.body.style.overflow = '';
     };
-  }, []);
+  }, [isOpen]);
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
-    } else {
-      document.exitFullscreen();
-    }
-  };
-
-  const goToPrevPage = () => {
-    setPageNumber((prev) => Math.max(1, prev - 1));
-  };
-
-  const goToNextPage = () => {
-    setPageNumber((prev) => Math.min(numPages, prev + 1));
-  };
-
-  const zoomIn = () => {
-    setScale((prev) => Math.min(3, prev + 0.25));
-  };
-
-  const zoomOut = () => {
-    setScale((prev) => Math.max(0.5, prev - 0.25));
-  };
-
-  const resetZoom = () => {
-    setScale(1.0);
-  };
-
-  const rotate = () => {
-    setRotation((prev) => (prev + 90) % 360);
-  };
-
-  // Tính toán width dựa trên scale
+  // Handle Escape key to close
   useEffect(() => {
-    const updateWidth = () => {
-      // Width mặc định cho PDF page
-      const baseWidth = 800;
-      setWidth(baseWidth * scale);
+    if (!isOpen) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
     };
-    updateWidth();
-  }, [scale]);
 
-  const handleDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
-    setNumPages(numPages);
-    setIsLoading(false);
-    setError('');
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
+
+  if (!file || !isOpen) return null;
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
-  const handleDocumentLoadError = (error: Error) => {
-    console.error('PDF Document load error:', error);
-    let errorMessage = 'Không thể tải file PDF. ';
-    
-    if (error.message.includes('worker')) {
-      errorMessage += 'Lỗi worker. Vui lòng refresh trang.';
-    } else if (error.message.includes('Invalid PDF')) {
-      errorMessage += 'File PDF không hợp lệ.';
-    } else if (error.message.includes('Missing PDF')) {
-      errorMessage += 'File PDF không tồn tại.';
-    } else {
-      errorMessage += error.message || 'Vui lòng thử lại.';
-    }
-    
-    setError(errorMessage);
-    setIsLoading(false);
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex flex-col">
-      {/* Header */}
-      <div className="bg-gray-900 text-white px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-4 flex-1 min-w-0">
-          <h2 className="font-medium truncate">{file.name}</h2>
-          <div className="flex items-center gap-2 text-sm text-gray-300">
-            <span>
-              Trang {pageNumber} / {numPages}
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Zoom Controls */}
-          <div className="flex items-center gap-1 border-r border-gray-700 pr-2 mr-2">
-            <button
-              onClick={zoomOut}
-              className="p-2 hover:bg-gray-800 rounded transition-colors"
-              title="Thu nhỏ"
-              disabled={scale <= 0.5}
-            >
-              <ZoomOut className="w-4 h-4" />
-            </button>
-            <button
-              onClick={resetZoom}
-              className="px-2 py-1 text-xs hover:bg-gray-800 rounded transition-colors"
-              title="Reset zoom"
-            >
-              {Math.round(scale * 100)}%
-            </button>
-            <button
-              onClick={zoomIn}
-              className="p-2 hover:bg-gray-800 rounded transition-colors"
-              title="Phóng to"
-              disabled={scale >= 3}
-            >
-              <ZoomIn className="w-4 h-4" />
-            </button>
+  return createPortal(
+    <div 
+      className="fixed inset-0 z-[9999] bg-gray-900 flex flex-col animate-in fade-in duration-200"
+      onClick={(e) => {
+        // Close when clicking outside (but not on the PDF content)
+        if (e.target === e.currentTarget && !isLoading && !error) {
+          onClose();
+        }
+      }}
+    >
+      <div 
+        ref={containerRef}
+        className="relative w-full h-full bg-gray-900 flex flex-col overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header Toolbar */}
+        <div className={`bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 ${isMobile ? 'px-3 py-2.5' : 'px-6 py-4'} flex items-center justify-between shadow-lg`}>
+          <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+            <div className={`${isMobile ? 'p-1.5' : 'p-2'} bg-white/20 rounded-lg backdrop-blur-sm shrink-0`}>
+              <FileText className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-white`} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className={`text-white font-semibold ${isMobile ? 'text-sm' : 'text-lg'} truncate`}>{file.name}</h3>
+              {!isMobile && (
+                <p className="text-blue-100 text-xs mt-0.5">
+                  Uploaded: {formatDate(file.uploadedAt)}
+                </p>
+              )}
+            </div>
           </div>
 
-          {/* Rotate */}
-          <button
-            onClick={rotate}
-            className="p-2 hover:bg-gray-800 rounded transition-colors border-r border-gray-700 pr-2 mr-2"
-            title="Xoay 90°"
-          >
-            <RotateCw className="w-4 h-4" />
-          </button>
-
-          {/* Navigation */}
-          <div className="flex items-center gap-1 border-r border-gray-700 pr-2 mr-2">
-            <button
-              onClick={goToPrevPage}
-              disabled={pageNumber <= 1}
-              className="p-2 hover:bg-gray-800 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Trang trước"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              onClick={goToNextPage}
-              disabled={pageNumber >= numPages}
-              className="p-2 hover:bg-gray-800 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Trang sau"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Fullscreen */}
-          <button
-            onClick={toggleFullscreen}
-            className="p-2 hover:bg-gray-800 rounded transition-colors"
-            title={isFullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'}
-          >
-            {isFullscreen ? (
-              <Minimize2 className="w-4 h-4" />
-            ) : (
-              <Maximize2 className="w-4 h-4" />
-            )}
-          </button>
-
-          {/* Close */}
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-800 rounded transition-colors"
-            title="Đóng"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* PDF Content */}
-      <div className="flex-1 overflow-auto bg-gray-800 flex items-center justify-center p-4">
-        {isLoading && (
-          <div className="text-white">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-            <p>Đang tải PDF...</p>
-          </div>
-        )}
-
-        {error && (
-          <div className="text-white text-center">
-            <p className="text-red-400 mb-4">{error}</p>
-            <button
-              onClick={() => {
-                window.open(fileService.getFileUrl(file.id), '_blank');
-              }}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-            >
-              Mở trong tab mới
-            </button>
-          </div>
-        )}
-
-        {!error && pdfUrl && (
-          <div className="bg-white shadow-2xl max-w-full">
-            <Document
-              file={pdfUrl}
-              onLoadSuccess={handleDocumentLoadSuccess}
-              onLoadError={handleDocumentLoadError}
-              loading={
-                <div className="text-white p-8">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-                  <p>Đang tải PDF...</p>
+          {/* Toolbar Actions */}
+          {pdfUrl && !isLoading && !error && (
+            <div className={`flex items-center ${isMobile ? 'gap-1' : 'gap-2'} ${isMobile ? 'ml-2' : 'ml-4'} shrink-0`}>
+              {!isMobile && (
+                /* Desktop Zoom Controls */
+                <div className="flex items-center gap-1 bg-white/20 rounded-lg p-1 backdrop-blur-sm">
+                  <button
+                    onClick={handleZoomOut}
+                    disabled={zoom <= 50}
+                    className="p-1.5 text-white hover:bg-white/30 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Thu nhỏ"
+                  >
+                    <ZoomOut className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={handleZoomReset}
+                    className="px-3 py-1.5 text-white text-sm font-medium hover:bg-white/30 rounded transition-colors min-w-[60px]"
+                    title="Reset zoom"
+                  >
+                    {zoom}%
+                  </button>
+                  <button
+                    onClick={handleZoomIn}
+                    disabled={zoom >= 200}
+                    className="p-1.5 text-white hover:bg-white/30 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Phóng to"
+                  >
+                    <ZoomIn className="w-4 h-4" />
+                  </button>
                 </div>
-              }
-              options={{
-                // Sử dụng version 5.4.296 để khớp với react-pdf
-                cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.296/cmaps/`,
-                cMapPacked: true,
-                standardFontDataUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.296/standard_fonts/`,
-                verbosity: 0,
-                disableAutoFetch: false,
-                disableStream: false,
-              }}
-              className="flex flex-col items-center"
-            >
-              <div className="shadow-lg">
-                <Page
-                  pageNumber={pageNumber}
-                  scale={scale}
-                  width={width}
-                  rotate={rotation}
-                  renderTextLayer={true}
-                  renderAnnotationLayer={true}
-                  onRenderError={(error) => {
-                    console.error('Page render error:', error);
-                    setError('Lỗi khi render trang PDF. Vui lòng thử lại.');
-                  }}
-                  loading={
-                    <div className="flex items-center justify-center p-8 bg-gray-100 min-w-[400px] min-h-[600px]">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600"></div>
+              )}
+
+              {/* Mobile Zoom Controls - Simplified */}
+              {isMobile && (
+                <div className="flex items-center gap-0.5 bg-white/20 rounded-lg p-0.5 backdrop-blur-sm">
+                  <button
+                    onClick={handleZoomOut}
+                    disabled={zoom <= 50}
+                    className="p-1.5 text-white active:bg-white/30 rounded transition-colors disabled:opacity-50 touch-manipulation"
+                    title="Thu nhỏ"
+                  >
+                    <ZoomOut className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={handleZoomFit}
+                    className="px-2 py-1.5 text-white text-xs font-medium active:bg-white/30 rounded transition-colors touch-manipulation"
+                    title="Vừa màn hình"
+                  >
+                    {zoom}%
+                  </button>
+                  <button
+                    onClick={handleZoomIn}
+                    disabled={zoom >= 200}
+                    className="p-1.5 text-white active:bg-white/30 rounded transition-colors disabled:opacity-50 touch-manipulation"
+                    title="Phóng to"
+                  >
+                    <ZoomIn className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+
+              {/* Fullscreen - Hidden on mobile (use native fullscreen) */}
+              {!isMobile && (
+                <button
+                  onClick={handleFullscreen}
+                  className="p-2 bg-white/20 text-white hover:bg-white/30 rounded-lg transition-colors backdrop-blur-sm"
+                  title={isFullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'}
+                >
+                  {isFullscreen ? (
+                    <Minimize2 className="w-4 h-4" />
+                  ) : (
+                    <Maximize2 className="w-4 h-4" />
+                  )}
+                </button>
+              )}
+
+              {/* Download */}
+              <button
+                onClick={handleDownload}
+                className={`${isMobile ? 'p-1.5' : 'p-2'} bg-white/20 text-white active:bg-white/30 rounded-lg transition-colors backdrop-blur-sm touch-manipulation`}
+                title="Tải xuống"
+              >
+                <Download className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
+              </button>
+
+              {/* Close */}
+              <button
+                onClick={onClose}
+                className={`${isMobile ? 'p-1.5' : 'p-2'} bg-white/20 text-white active:bg-red-500/80 rounded-lg transition-colors backdrop-blur-sm touch-manipulation`}
+                title="Đóng"
+              >
+                <X className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* PDF Content Area - Full Screen */}
+        <div className="flex-1 relative bg-gray-900 overflow-hidden min-h-0 flex flex-col">
+          {/* Loading State */}
+          {isLoading && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 z-20">
+              <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full mx-4">
+                <div className="flex flex-col items-center">
+                  <div className="relative mb-6">
+                    <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
+                      <Loader2 className="w-10 h-10 text-white animate-spin" />
                     </div>
-                  }
-                  className="border border-gray-200"
-                />
+                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-4 border-white animate-pulse" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Đang tải file PDF</h3>
+                  <p className="text-sm text-gray-600 text-center mb-4 line-clamp-2">{file.name}</p>
+                  <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                    <div className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full animate-pulse" style={{ width: '60%' }} />
+                  </div>
+                </div>
               </div>
-            </Document>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && !isLoading && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 z-20 p-6">
+              <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
+                    <AlertCircle className="w-10 h-10 text-red-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Không thể tải file</h3>
+                  <p className="text-sm text-gray-600 mb-6">{error}</p>
+                  <div className="flex gap-3 w-full">
+                    <button
+                      onClick={handleRetry}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg font-medium"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      Thử lại
+                    </button>
+                    <button
+                      onClick={onClose}
+                      className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                    >
+                      Đóng
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* PDF Viewer - Full Screen */}
+          {pdfUrl && !isLoading && !error && (
+            <div className="w-full h-full overflow-auto">
+              {isMobile ? (
+                // Mobile: Direct iframe full screen
+                <iframe
+                  ref={iframeRef}
+                  src={pdfUrl}
+                  className="w-full h-full border-0 bg-white"
+                  title={file.name}
+                  style={{ 
+                    display: 'block',
+                    width: '100%',
+                    minHeight: '100%',
+                    touchAction: 'pan-x pan-y pinch-zoom',
+                  }}
+                  allow="fullscreen"
+                />
+              ) : (
+                // Desktop: Full width/height with zoom
+                <div className="w-full h-full flex items-center justify-center bg-gray-900">
+                  <div 
+                    className="bg-white transition-all duration-300"
+                    style={{
+                      width: `${zoom}%`,
+                      height: `${zoom}%`,
+                      minWidth: '100%',
+                      minHeight: '100%',
+                    }}
+                  >
+                    <iframe
+                      ref={iframeRef}
+                      src={pdfUrl}
+                      className="w-full h-full border-0"
+                      title={file.name}
+                      style={{ 
+                        display: 'block',
+                      }}
+                      allow="fullscreen"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer Info - Hidden on mobile to save space */}
+        {pdfUrl && !isLoading && !error && !isMobile && (
+          <div className="bg-white border-t border-gray-200 px-6 py-3 flex items-center justify-between text-xs text-gray-600">
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5" />
+                <span className="font-medium truncate max-w-xs">{file.name}</span>
+              </span>
+            </div>
+            <div className="flex items-center gap-4">
+              <span>Zoom: {zoom}%</span>
+              <span className="text-gray-400">•</span>
+              <span>PDF Viewer</span>
+            </div>
           </div>
         )}
-        
-        {!error && !pdfUrl && isLoading && (
-          <div className="text-white">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-            <p>Đang tải PDF...</p>
+
+        {/* Mobile Bottom Bar - Minimal info */}
+        {pdfUrl && !isLoading && !error && isMobile && (
+          <div className="bg-white/95 backdrop-blur-sm border-t border-gray-200 px-3 py-2 flex items-center justify-center text-xs text-gray-600">
+            <span className="truncate max-w-full">{file.name}</span>
+            <span className="mx-2 text-gray-400">•</span>
+            <span>{zoom}%</span>
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
-

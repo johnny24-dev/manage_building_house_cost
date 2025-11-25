@@ -23,6 +23,9 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY database.sqlite database.sqlite
 
+# Tạo thư mục uploads nếu chưa có (sẽ được mount từ volume)
+RUN mkdir -p /app/uploads
+
 EXPOSE 9000
 
 CMD ["node", "dist/index.js"]

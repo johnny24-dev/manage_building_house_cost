@@ -98,13 +98,20 @@ export class DesignFileController {
       const { id } = req.params;
       const file = await designFileService.findById(id);
 
+      // Normalize file path - xử lý cả relative và absolute path
+      let filePath = file.filePath;
+      if (!path.isAbsolute(filePath)) {
+        filePath = path.join(process.cwd(), filePath);
+      }
+
       // Kiểm tra file tồn tại trên disk
-      if (!fs.existsSync(file.filePath)) {
+      if (!fs.existsSync(filePath)) {
+        console.error(`[DesignFile] File not found: ${filePath} (original: ${file.filePath})`);
         throw new AppError(ErrorCode.FILE_NOT_FOUND, 'File không tồn tại trên server');
       }
 
       // Get file stats để set Content-Length
-      const stats = fs.statSync(file.filePath);
+      const stats = fs.statSync(filePath);
       const fileSize = stats.size;
 
       // Set headers để browser có thể hiển thị PDF
@@ -115,23 +122,29 @@ export class DesignFileController {
         'Content-Disposition',
         `inline; filename="${asciiFallback}"; filename*=UTF-8''${encodedName}`
       );
-      res.setHeader('Content-Length', fileSize);
+      res.setHeader('Content-Length', fileSize.toString());
       
-      // CORS headers cho file streaming
+      // CORS headers cho file streaming - cho phép tất cả origin trong production
       const origin = req.headers.origin;
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
       if (origin) {
         res.setHeader('Access-Control-Allow-Origin', origin);
         res.setHeader('Access-Control-Allow-Credentials', 'true');
+      } else {
+        // Fallback nếu không có origin header
+        res.setHeader('Access-Control-Allow-Origin', frontendUrl);
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
       }
       res.setHeader('Access-Control-Expose-Headers', 'Content-Type, Content-Length, Content-Disposition');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
       
       // Cache control
       res.setHeader('Cache-Control', 'private, max-age=3600');
 
       // Stream file
-      const fileStream = fs.createReadStream(file.filePath);
+      const fileStream = fs.createReadStream(filePath);
       fileStream.on('error', (error) => {
-        console.error('File stream error:', error);
+        console.error('[DesignFile] File stream error:', error);
         if (!res.headersSent) {
           next(error);
         }

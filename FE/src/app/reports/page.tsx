@@ -95,7 +95,7 @@ export default function ReportsPage() {
     return (
       <DashboardLayout>
         <div className="space-y-6">
-          <div className="p-6 bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-xl shadow-sm">
+          <div className="p-6 bg-linear-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-xl shadow-sm">
             <div className="flex items-start gap-4">
               <div className="p-2 bg-red-200 rounded-lg">
                 <AlertCircle className="w-6 h-6 text-red-600" />
@@ -123,12 +123,12 @@ export default function ReportsPage() {
     <DashboardLayout>
       <div className="space-y-6 pb-6">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+        <div className="bg-linear-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <div className="p-2 bg-blue-600 rounded-lg shadow-sm">
-                  <BarChart3 className="w-6 h-6 text-white" />
+                  <BarChart3 className="w-6 h-6 text-white shrink-0" />
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Báo cáo</h1>
               </div>
@@ -215,7 +215,7 @@ export default function ReportsPage() {
           <Card 
             title={
               <div className="flex items-center gap-2.5">
-                <BarChart3 className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                <BarChart3 className="w-5 h-5 text-blue-600 shrink-0" />
                 <span className="font-semibold">Biểu đồ chi phí theo tháng</span>
               </div>
             }
@@ -228,7 +228,7 @@ export default function ReportsPage() {
           <Card 
             title={
               <div className="flex items-center gap-2.5">
-                <PieChartIcon className="w-5 h-5 text-purple-600 flex-shrink-0" />
+                <PieChartIcon className="w-5 h-5 text-purple-600 shrink-0" />
                 <span className="font-semibold">Phân bổ theo hạng mục</span>
               </div>
             }
@@ -244,165 +244,165 @@ export default function ReportsPage() {
         <Card 
           title={
             <div className="flex items-center gap-2.5">
-              <FileText className="w-5 h-5 text-indigo-600 flex-shrink-0" />
+              <FileText className="w-5 h-5 text-indigo-600 shrink-0" />
               <span className="font-semibold">Báo cáo chi tiết</span>
             </div>
           }
           className="hover:shadow-lg transition-shadow duration-200"
         >
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {/* Chi phí theo hạng mục */}
-              <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200 hover:shadow-md transition-shadow h-full flex flex-col">
-                <div className="flex items-center gap-2.5 mb-5">
-                  <div className="p-2.5 bg-blue-100 rounded-lg flex-shrink-0">
-                    <BarChart3 className="w-5 h-5 text-blue-600" />
+              <div className="p-4 sm:p-6 bg-linear-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200 hover:shadow-md transition-shadow h-full flex flex-col min-h-[300px]">
+                <div className="flex items-center gap-2.5 mb-4 sm:mb-5 shrink-0">
+                  <div className="p-2 sm:p-2.5 bg-blue-100 rounded-lg shrink-0">
+                    <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                   </div>
-                  <h4 className="font-semibold text-gray-900 text-base">
+                  <h4 className="font-semibold text-gray-900 text-sm sm:text-base">
                     Chi phí theo hạng mục
                   </h4>
                 </div>
                 {report.costByCategory.length > 0 ? (
                   <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                    <div className="overflow-y-auto max-h-[400px] sm:max-h-[500px] pr-2 space-y-3 custom-scrollbar -mr-2">
+                    <div className="overflow-y-auto flex-1 pr-2 space-y-2 sm:space-y-3 custom-scrollbar -mr-2 min-h-0">
                       {report.costByCategory
                         .sort((a, b) => b.total - a.total)
                         .map((item, index) => (
                           <div
                             key={item.categoryId}
-                            className="flex items-center justify-between p-3.5 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition-all group flex-shrink-0"
+                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 p-3 sm:p-3.5 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition-all group shrink-0"
                           >
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                              <div className="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0"></div>
-                              <span className="text-sm font-medium text-gray-700 truncate group-hover:text-gray-900">
+                            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                              <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-blue-500 shrink-0"></div>
+                              <span className="text-xs sm:text-sm font-medium text-gray-700 break-words sm:truncate group-hover:text-gray-900 flex-1">
                                 {item.categoryName}
                               </span>
-                              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full whitespace-nowrap">
+                              <span className="text-[10px] sm:text-xs text-gray-500 bg-gray-100 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap shrink-0">
                                 {item.count} giao dịch
                               </span>
                             </div>
-                            <span className="font-semibold text-gray-900 ml-3 whitespace-nowrap text-sm">
+                            <div className="flex items-center justify-end sm:justify-start sm:ml-3">
                               <Tooltip content={formatCurrencyFull(item.total)}>
-                                <span className="font-semibold text-gray-900 ml-3 whitespace-nowrap text-sm cursor-help">
+                                <span className="font-semibold text-gray-900 whitespace-nowrap text-xs sm:text-sm cursor-help">
                                   {formatCurrencyResponsive(item.total)}
                                 </span>
                               </Tooltip>
-                            </span>
+                            </div>
                           </div>
                         ))}
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-12 flex-1 flex flex-col items-center justify-center">
-                    <BarChart3 className="w-12 h-12 text-gray-300 mb-3" />
-                    <p className="text-sm text-gray-500">Chưa có dữ liệu</p>
+                  <div className="text-center py-8 sm:py-12 flex-1 flex flex-col items-center justify-center">
+                    <BarChart3 className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300 mb-2 sm:mb-3" />
+                    <p className="text-xs sm:text-sm text-gray-500">Chưa có dữ liệu</p>
                   </div>
                 )}
               </div>
 
               {/* Thống kê thanh toán */}
-              <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200 hover:shadow-md transition-shadow h-full flex flex-col">
-                <div className="flex items-center gap-2.5 mb-5">
-                  <div className="p-2.5 bg-green-100 rounded-lg flex-shrink-0">
-                    <TrendingUp className="w-5 h-5 text-green-600" />
+              <div className="p-4 sm:p-6 bg-linear-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200 hover:shadow-md transition-shadow h-full flex flex-col min-h-[300px]">
+                <div className="flex items-center gap-2.5 mb-4 sm:mb-5 shrink-0">
+                  <div className="p-2 sm:p-2.5 bg-green-100 rounded-lg shrink-0">
+                    <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                   </div>
-                  <h4 className="font-semibold text-gray-900 text-base">
+                  <h4 className="font-semibold text-gray-900 text-sm sm:text-base">
                     Thống kê thanh toán
                   </h4>
                 </div>
-                <div className="space-y-3 flex-1">
-                  <div className="p-4 bg-white rounded-lg border border-green-200 hover:border-green-300 transition-colors">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-3.5 h-3.5 rounded-full bg-green-500 flex-shrink-0"></div>
-                        <span className="text-sm font-medium text-gray-700">Đã thanh toán</span>
+                <div className="space-y-2.5 sm:space-y-3 flex-1 overflow-y-auto pr-2 custom-scrollbar -mr-2">
+                  <div className="p-3 sm:p-4 bg-white rounded-lg border border-green-200 hover:border-green-300 transition-colors">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2 sm:gap-2.5">
+                        <div className="w-3 sm:w-3.5 h-3 sm:h-3.5 rounded-full bg-green-500 shrink-0"></div>
+                        <span className="text-xs sm:text-sm font-medium text-gray-700">Đã thanh toán</span>
                       </div>
                       <Tooltip content={formatCurrencyFull(report.paymentStatistics.paid)}>
-                        <span className="font-semibold text-green-600 text-sm cursor-help">
+                        <span className="font-semibold text-green-600 text-xs sm:text-sm cursor-help whitespace-nowrap">
                           {formatCurrencyResponsive(report.paymentStatistics.paid)}
                         </span>
                       </Tooltip>
                     </div>
                     {report.paymentStatistics.total > 0 && (
-                      <div className="mt-2.5">
-                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div className="mt-2 sm:mt-2.5">
+                        <div className="w-full bg-gray-200 rounded-full h-2 sm:h-2.5">
                           <div
-                            className="bg-green-500 h-2.5 rounded-full transition-all duration-500"
+                            className="bg-green-500 h-2 sm:h-2.5 rounded-full transition-all duration-500"
                             style={{
                               width: `${(report.paymentStatistics.paid / report.paymentStatistics.total) * 100}%`,
                             }}
                           ></div>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1.5">
+                        <p className="text-[10px] sm:text-xs text-gray-500 mt-1 sm:mt-1.5">
                           {((report.paymentStatistics.paid / report.paymentStatistics.total) * 100).toFixed(1)}% tổng chi phí
                         </p>
                       </div>
                     )}
                   </div>
 
-                  <div className="p-4 bg-white rounded-lg border border-yellow-200 hover:border-yellow-300 transition-colors">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-3.5 h-3.5 rounded-full bg-yellow-500 flex-shrink-0"></div>
-                        <span className="text-sm font-medium text-gray-700">Chờ thanh toán</span>
+                  <div className="p-3 sm:p-4 bg-white rounded-lg border border-yellow-200 hover:border-yellow-300 transition-colors">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2 sm:gap-2.5">
+                        <div className="w-3 sm:w-3.5 h-3 sm:h-3.5 rounded-full bg-yellow-500 shrink-0"></div>
+                        <span className="text-xs sm:text-sm font-medium text-gray-700">Chờ thanh toán</span>
                       </div>
                       <Tooltip content={formatCurrencyFull(report.paymentStatistics.pending)}>
-                        <span className="font-semibold text-yellow-600 text-sm cursor-help">
+                        <span className="font-semibold text-yellow-600 text-xs sm:text-sm cursor-help whitespace-nowrap">
                           {formatCurrencyResponsive(report.paymentStatistics.pending)}
                         </span>
                       </Tooltip>
                     </div>
                     {report.paymentStatistics.total > 0 && (
-                      <div className="mt-2.5">
-                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div className="mt-2 sm:mt-2.5">
+                        <div className="w-full bg-gray-200 rounded-full h-2 sm:h-2.5">
                           <div
-                            className="bg-yellow-500 h-2.5 rounded-full transition-all duration-500"
+                            className="bg-yellow-500 h-2 sm:h-2.5 rounded-full transition-all duration-500"
                             style={{
                               width: `${(report.paymentStatistics.pending / report.paymentStatistics.total) * 100}%`,
                             }}
                           ></div>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1.5">
+                        <p className="text-[10px] sm:text-xs text-gray-500 mt-1 sm:mt-1.5">
                           {((report.paymentStatistics.pending / report.paymentStatistics.total) * 100).toFixed(1)}% tổng chi phí
                         </p>
                       </div>
                     )}
                   </div>
 
-                  <div className="p-4 bg-white rounded-lg border border-red-200 hover:border-red-300 transition-colors">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-3.5 h-3.5 rounded-full bg-red-500 flex-shrink-0"></div>
-                        <span className="text-sm font-medium text-gray-700">Đã hủy</span>
+                  <div className="p-3 sm:p-4 bg-white rounded-lg border border-red-200 hover:border-red-300 transition-colors">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2 sm:gap-2.5">
+                        <div className="w-3 sm:w-3.5 h-3 sm:h-3.5 rounded-full bg-red-500 shrink-0"></div>
+                        <span className="text-xs sm:text-sm font-medium text-gray-700">Đã hủy</span>
                       </div>
                       <Tooltip content={formatCurrencyFull(report.paymentStatistics.cancelled)}>
-                        <span className="font-semibold text-red-600 text-sm cursor-help">
+                        <span className="font-semibold text-red-600 text-xs sm:text-sm cursor-help whitespace-nowrap">
                           {formatCurrencyResponsive(report.paymentStatistics.cancelled)}
                         </span>
                       </Tooltip>
                     </div>
                     {report.paymentStatistics.total > 0 && (
-                      <div className="mt-2.5">
-                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div className="mt-2 sm:mt-2.5">
+                        <div className="w-full bg-gray-200 rounded-full h-2 sm:h-2.5">
                           <div
-                            className="bg-red-500 h-2.5 rounded-full transition-all duration-500"
+                            className="bg-red-500 h-2 sm:h-2.5 rounded-full transition-all duration-500"
                             style={{
                               width: `${(report.paymentStatistics.cancelled / report.paymentStatistics.total) * 100}%`,
                             }}
                           ></div>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1.5">
+                        <p className="text-[10px] sm:text-xs text-gray-500 mt-1 sm:mt-1.5">
                           {((report.paymentStatistics.cancelled / report.paymentStatistics.total) * 100).toFixed(1)}% tổng chi phí
                         </p>
                       </div>
                     )}
                   </div>
 
-                  <div className="p-4 bg-gradient-to-r from-gray-100 to-gray-200 rounded-lg border-2 border-gray-300 mt-4">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-gray-900 text-sm">Tổng cộng</span>
+                  <div className="p-3 sm:p-4 bg-linear-to-r from-gray-100 to-gray-200 rounded-lg border-2 border-gray-300 mt-3 sm:mt-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <span className="font-semibold text-gray-900 text-xs sm:text-sm">Tổng cộng</span>
                       <Tooltip content={formatCurrencyFull(report.paymentStatistics.total)}>
-                        <span className="text-base font-bold text-gray-900 cursor-help">
+                        <span className="text-sm sm:text-base font-bold text-gray-900 cursor-help whitespace-nowrap">
                           {formatCurrencyResponsive(report.paymentStatistics.total)}
                         </span>
                       </Tooltip>

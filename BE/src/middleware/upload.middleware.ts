@@ -1,13 +1,19 @@
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
 import { Request } from 'express';
 import { AppError } from '../utils/AppError';
 import { ErrorCode } from '../constants/statusCodes';
 
-// Cấu hình storage
+// Cấu hình storage - đảm bảo đường dẫn tuyệt đối trong Docker
+const uploadsDir = path.join(process.cwd(), 'uploads');
 const storage = multer.diskStorage({
   destination: (req: Request, file: Express.Multer.File, cb) => {
-    cb(null, 'uploads/');
+    // Đảm bảo thư mục uploads tồn tại
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+    cb(null, uploadsDir);
   },
   filename: (req: Request, file: Express.Multer.File, cb) => {
     // Tạo tên file unique: timestamp-originalname

@@ -12,6 +12,7 @@ import { useAuth } from '@/stores/AuthContext';
 import fileService, { DesignFile } from '@/services/file.service';
 import FileUpload from '@/components/files/FileUpload';
 import FileList from '@/components/files/FileList';
+import PDFViewer from '@/components/files/PDFViewer';
 import { useToast } from '@/components/ui/Toast';
 
 const formatFileSize = (bytes: number) => {
@@ -32,6 +33,7 @@ export default function FilesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('date-desc');
   const [showFilters, setShowFilters] = useState(false);
+  const [viewingFile, setViewingFile] = useState<DesignFile | null>(null);
 
   const { showToast } = useToast();
 
@@ -132,66 +134,7 @@ export default function FilesPage() {
   };
 
   const handleView = (file: DesignFile) => {
-    // Mở PDF trong tab mới với trình duyệt mặc định
-    // Sử dụng Next.js API route - token được lấy từ cookie tự động
-    const fileUrl = fileService.getFileUrl(file.id);
-    
-    // Mở PDF trực tiếp - API route sẽ lấy token từ cookie
-    // Nếu cookie không có, sẽ thử lấy từ Authorization header
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      showToast({
-        type: 'warning',
-        title: 'Chưa đăng nhập',
-        description: 'Vui lòng đăng nhập lại để mở file.',
-      });
-      return;
-    }
-
-    // Fetch với token trong header (fallback nếu cookie không hoạt động)
-    fetch(fileUrl, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/pdf',
-      },
-      credentials: 'include', // Include cookies
-    })
-      .then((response) => {
-        if (!response.ok) {
-          if (response.status === 401) {
-            throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-          }
-          throw new Error('Không thể tải file PDF');
-        }
-        return response.blob();
-      })
-      .then((blob) => {
-        // Tạo blob URL và mở trong tab mới
-        const blobUrl = URL.createObjectURL(blob);
-        const newWindow = window.open(blobUrl, '_blank');
-        
-        if (newWindow) {
-          // Cleanup blob URL sau 5 phút
-          setTimeout(() => URL.revokeObjectURL(blobUrl), 300000);
-        } else {
-          // Nếu popup bị chặn, thử cách khác
-          const link = document.createElement('a');
-          link.href = blobUrl;
-          link.target = '_blank';
-          link.click();
-          setTimeout(() => URL.revokeObjectURL(blobUrl), 300000);
-        }
-      })
-      .catch((error) => {
-        console.error('Error opening PDF:', error);
-        showToast({
-          type: 'error',
-          title: 'Không thể mở file PDF',
-          description: error.message,
-        });
-      });
+    setViewingFile(file);
   };
 
   // Filter và sort files
@@ -346,6 +289,13 @@ export default function FilesPage() {
           <FileUpload onUpload={handleUpload} />
         </Modal>
         )}
+
+        {/* PDF Viewer Modal */}
+        <PDFViewer
+          file={viewingFile}
+          isOpen={!!viewingFile}
+          onClose={() => setViewingFile(null)}
+        />
 
       </div>
     </DashboardLayout>
