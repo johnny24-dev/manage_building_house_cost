@@ -96,6 +96,10 @@ NODE_ENV=development
 # SQLite Database
 # DB_PATH có thể tùy chỉnh, mặc định sẽ là database.sqlite trong thư mục root
 # DB_PATH=./database.sqlite
+DB_BACKUP_ENABLED=true
+DB_BACKUP_DIR=./backups
+DB_BACKUP_TIME=02:00
+DB_BACKUP_RETENTION_DAYS=7
 
 # JWT
 JWT_SECRET=your-secret-key-change-in-production-please-change-this
