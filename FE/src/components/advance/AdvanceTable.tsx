@@ -4,12 +4,13 @@ import { AdvancePayment, CONSTRUCTION_PHASES } from '@/services/advance.service'
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Tooltip from '@/components/ui/Tooltip';
-import { Edit2, Trash2, Loader2, CreditCard } from 'lucide-react';
+import { Edit2, Trash2, Loader2, CreditCard, Sparkles } from 'lucide-react';
 
 interface AdvanceTableProps {
   advances: AdvancePayment[];
   onEdit?: (advance: AdvancePayment) => void;
   onDelete?: (id: string) => void;
+  onRowClick?: (advance: AdvancePayment) => void;
   isLoading?: boolean;
   formatCurrencyFull?: (amount: number) => string;
   formatCurrencyResponsive?: (amount: number) => string;
@@ -41,6 +42,7 @@ export default function AdvanceTable({
   advances,
   onEdit,
   onDelete,
+  onRowClick,
   isLoading = false,
   formatCurrencyFull = formatCurrency,
   formatCurrencyResponsive = formatCurrency,
@@ -84,17 +86,31 @@ export default function AdvanceTable({
       {/* Mobile View - Card Layout */}
       <div className="block md:hidden space-y-3">
         {advances.map((advance, index) => (
-          <Card key={advance.id} className="p-4 hover:shadow-md transition-shadow">
-            <div className="space-y-3">
-              {/* Header */}
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xs font-medium text-gray-500">#{index + 1}</span>
-                    <h3 className="font-semibold text-gray-900 truncate">
-                      {advance.ticketName}
-                    </h3>
-                  </div>
+          <button
+            key={advance.id}
+            type="button"
+            onClick={() => onRowClick && onRowClick(advance)}
+            className="w-full text-left"
+          >
+            <Card className="p-4 hover:shadow-md transition-shadow">
+              <div className="space-y-3">
+                {/* Header */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs font-medium text-gray-500">#{index + 1}</span>
+                      <h3 className="font-semibold text-gray-900 truncate">
+                        {advance.ticketName}
+                      </h3>
+                    </div>
+                    {onRowClick && (
+                      <div className="mb-2">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-semibold">
+                          <Sparkles className="w-3.5 h-3.5" />
+                          Xem chi tiết
+                        </span>
+                      </div>
+                    )}
                   <div className="flex items-center gap-2 flex-wrap">
                     {advance.category && (
                       <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
@@ -109,62 +125,69 @@ export default function AdvanceTable({
                     </span>
                   </div>
                 </div>
-                {(onEdit || onDelete) && (
-                  <div className="flex items-center gap-1 shrink-0">
-                    {onEdit && (
-                      <button
-                        onClick={() => onEdit(advance)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Sửa"
-                        aria-label="Sửa phiếu tạm ứng"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                    )}
-                    {onDelete && (
-                      <button
-                        onClick={() => handleDelete(advance.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Xóa"
-                        aria-label="Xóa phiếu tạm ứng"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                    {(onEdit || onDelete) && (
+                      <div className="flex items-center gap-1 shrink-0">
+                        {onEdit && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEdit(advance);
+                            }}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Sửa"
+                            aria-label="Sửa phiếu tạm ứng"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        )}
+                        {onDelete && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(advance.id);
+                            }}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Xóa"
+                            aria-label="Xóa phiếu tạm ứng"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
 
-              {/* Details */}
-              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100">
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Ngày thanh toán</p>
-                  <p className="text-sm font-medium text-gray-900">
-                    {formatDate(advance.paymentDate)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Số tiền</p>
-                  <Tooltip content={formatCurrencyFull(advance.amount)}>
-                    <p className="text-sm font-bold text-gray-900 cursor-help">
-                      {formatCurrencyResponsive(advance.amount)}
-                    </p>
-                  </Tooltip>
-                </div>
-              </div>
+                  {/* Details */}
+                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100">
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Ngày thanh toán</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {formatDate(advance.paymentDate)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Số tiền</p>
+                      <Tooltip content={formatCurrencyFull(advance.amount)}>
+                        <p className="text-sm font-bold text-gray-900 cursor-help">
+                          {formatCurrencyResponsive(advance.amount)}
+                        </p>
+                      </Tooltip>
+                    </div>
+                  </div>
 
-              {/* Description */}
-              {advance.description && (
-                <div className="pt-2 border-t border-gray-100">
-                  <p className="text-xs text-gray-500 mb-1">Mô tả</p>
-                  <p className="text-sm text-gray-700 line-clamp-2">
-                    {advance.description}
-                  </p>
+                  {/* Description */}
+                  {advance.description && (
+                    <div className="pt-2 border-t border-gray-100">
+                      <p className="text-xs text-gray-500 mb-1">Mô tả</p>
+                      <p className="text-sm text-gray-700 line-clamp-2">
+                        {advance.description}
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </Card>
-        ))}
+              </Card>
+            </button>
+          ))}
       </div>
 
       {/* Desktop View - Table Layout */}
@@ -206,7 +229,11 @@ export default function AdvanceTable({
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {advances.map((advance, index) => (
-              <tr key={advance.id} className="hover:bg-blue-50/50 transition-colors group">
+              <tr
+                key={advance.id}
+                className="hover:bg-blue-50/50 transition-colors group cursor-pointer"
+                onClick={() => onRowClick && onRowClick(advance)}
+              >
                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {index + 1}
                 </td>
@@ -250,7 +277,10 @@ export default function AdvanceTable({
                     <div className="flex items-center justify-end gap-1 sm:gap-2">
                       {onEdit && (
                         <button
-                          onClick={() => onEdit(advance)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(advance);
+                          }}
                           className="text-blue-600 hover:text-blue-900 px-2 sm:px-3 py-1 rounded hover:bg-blue-100 transition-colors text-xs sm:text-sm font-medium"
                           title="Sửa"
                           aria-label="Sửa phiếu tạm ứng"
@@ -261,7 +291,10 @@ export default function AdvanceTable({
                       )}
                       {onDelete && (
                         <button
-                          onClick={() => handleDelete(advance.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(advance.id);
+                          }}
                           className="text-red-600 hover:text-red-900 px-2 sm:px-3 py-1 rounded hover:bg-red-100 transition-colors text-xs sm:text-sm font-medium"
                           title="Xóa"
                           aria-label="Xóa phiếu tạm ứng"

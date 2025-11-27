@@ -38,6 +38,9 @@ export class Cost {
   })
   status: CostStatus; // Trạng thái: pending, paid, cancelled
 
+  @Column({ type: 'varchar', name: 'bill_image_url', nullable: true })
+  billImageUrl: string | null;
+
   @CreateDateColumn({ type: 'datetime', name: 'created_at' })
   createdAt: Date;
 

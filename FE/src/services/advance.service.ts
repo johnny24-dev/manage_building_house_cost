@@ -13,6 +13,7 @@ export interface AdvancePayment {
   status: 'paid' | 'planned';
   createdAt?: string;
   updatedAt?: string;
+  billImageUrl?: string | null;
   category?: {
     id: string;
     name: string;
@@ -26,6 +27,83 @@ export const CONSTRUCTION_PHASES = [
   { value: 'Đợt 4', label: 'Đợt 4' },
   { value: 'Đợt 5', label: 'Đợt 5' },
 ] as const;
+
+type AdvanceCreatePayload = {
+  ticketName: string;
+  categoryId?: string | null;
+  amount: number;
+  paymentDate: string;
+  phase: string;
+  description?: string;
+  status?: 'paid' | 'planned';
+  billImageFile?: File | null;
+};
+
+type AdvanceUpdatePayload = {
+  ticketName?: string;
+  categoryId?: string | null;
+  amount?: number;
+  paymentDate?: string;
+  phase?: string;
+  description?: string;
+  status?: 'paid' | 'planned';
+  billImageFile?: File | null;
+  billImageRemoved?: boolean;
+};
+
+const buildFormData = (
+  data: Partial<AdvanceCreatePayload & AdvanceUpdatePayload>,
+  options?: { isUpdate?: boolean }
+) => {
+  const formData = new FormData();
+
+  const appendValue = (key: string, value: any) => {
+    if (value === undefined) return;
+    if (value === null) {
+      formData.append(key, '');
+      return;
+    }
+    formData.append(key, value);
+  };
+
+  if (data.ticketName !== undefined) {
+    appendValue('ticketName', data.ticketName);
+  }
+
+  if (data.categoryId !== undefined) {
+    appendValue('categoryId', data.categoryId ?? '');
+  }
+
+  if (data.amount !== undefined) {
+    appendValue('amount', String(data.amount));
+  }
+
+  if (data.paymentDate !== undefined) {
+    appendValue('paymentDate', new Date(data.paymentDate).toISOString());
+  }
+
+  if (data.phase !== undefined) {
+    appendValue('phase', data.phase);
+  }
+
+  if (data.description !== undefined) {
+    appendValue('description', data.description ?? '');
+  }
+
+  if (data.status !== undefined) {
+    appendValue('status', data.status);
+  }
+
+  if (data.billImageFile) {
+    formData.append('billImage', data.billImageFile);
+  }
+
+  if (options?.isUpdate && data.billImageRemoved) {
+    formData.append('removeBillImage', 'true');
+  }
+
+  return formData;
+};
 
 const advanceService = {
   async getAdvances(): Promise<ApiResponse<AdvancePayment[]>> {
@@ -70,20 +148,16 @@ const advanceService = {
     }
   },
 
-  async createAdvance(data: {
-    ticketName: string;
-    categoryId?: string | null;
-    amount: number;
-    paymentDate: string;
-    phase: string;
-    description?: string;
-    status?: 'paid' | 'planned';
-  }): Promise<ApiResponse<AdvancePayment>> {
+  async createAdvance(data: AdvanceCreatePayload): Promise<ApiResponse<AdvancePayment>> {
     try {
-      const response = await apiClient.post<ApiResponse<AdvancePayment>>('/advance-payments', {
-        ...data,
-        paymentDate: new Date(data.paymentDate).toISOString(),
-      });
+      const formData = buildFormData(data);
+      const response = await apiClient.post<ApiResponse<AdvancePayment>>(
+        '/advance-payments',
+        formData,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        }
+      );
       return response;
     } catch (error) {
       const axiosError = error as AxiosError<{ message?: string; error?: string }>;
@@ -98,21 +172,16 @@ const advanceService = {
     }
   },
 
-  async updateAdvance(id: string, data: {
-    ticketName?: string;
-    categoryId?: string | null;
-    amount?: number;
-    paymentDate?: string;
-    phase?: string;
-    description?: string;
-    status?: 'paid' | 'planned';
-  }): Promise<ApiResponse<AdvancePayment>> {
+  async updateAdvance(id: string, data: AdvanceUpdatePayload): Promise<ApiResponse<AdvancePayment>> {
     try {
-      const updateData: any = { ...data };
-      if (data.paymentDate) {
-        updateData.paymentDate = new Date(data.paymentDate).toISOString();
-      }
-      const response = await apiClient.put<ApiResponse<AdvancePayment>>(`/advance-payments/${id}`, updateData);
+      const formData = buildFormData(data, { isUpdate: true });
+      const response = await apiClient.put<ApiResponse<AdvancePayment>>(
+        `/advance-payments/${id}`,
+        formData,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        }
+      );
       return response;
     } catch (error) {
       const axiosError = error as AxiosError<{ message?: string; error?: string }>;

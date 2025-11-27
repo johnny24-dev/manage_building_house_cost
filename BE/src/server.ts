@@ -5,6 +5,8 @@ import cors from 'cors';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { initializeDatabase } from './config/database';
 import { scheduleDatabaseBackup } from './jobs/databaseBackup.job';
+import { ensureCostBillColumn } from './services/cost.service';
+import { ensureAdvanceBillColumn } from './services/advancePayment.service';
 
 // Routes
 import authRoutes from './routes/auth.routes';
@@ -74,6 +76,8 @@ export const startServer = async (): Promise<void> => {
     // Tạo super admin nếu chưa có
     const { createDefaultSuperAdmin } = await import('./services/auth.service');
     await createDefaultSuperAdmin();
+    await ensureCostBillColumn();
+    await ensureAdvanceBillColumn();
     scheduleDatabaseBackup();
     
     app.listen(PORT, () => {

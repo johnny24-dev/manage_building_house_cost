@@ -43,6 +43,9 @@ export class AdvancePayment {
   })
   status: PaymentStatus; // paid, planned
 
+  @Column({ type: 'varchar', name: 'bill_image_url', nullable: true })
+  billImageUrl: string | null;
+
   @CreateDateColumn({ type: 'datetime', name: 'created_at' })
   createdAt: Date;
 

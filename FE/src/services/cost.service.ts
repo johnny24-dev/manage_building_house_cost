@@ -11,6 +11,7 @@ export interface Cost {
   status: 'pending' | 'paid' | 'cancelled';
   createdAt?: string;
   updatedAt?: string;
+  billImageUrl?: string | null;
   category?: {
     id: string;
     name: string;
@@ -32,9 +33,11 @@ const costService = {
     }
   },
 
-  async createCost(data: Omit<Cost, 'id' | 'createdAt' | 'updatedAt' | 'category'>): Promise<ApiResponse<Cost>> {
+  async createCost(data: FormData): Promise<ApiResponse<Cost>> {
     try {
-      const response = await apiClient.post<ApiResponse<Cost>>('/costs', data);
+      const response = await apiClient.post<ApiResponse<Cost>>('/costs', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       return response;
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<any>>;
@@ -49,9 +52,11 @@ const costService = {
     }
   },
 
-  async updateCost(id: string, data: Partial<Omit<Cost, 'id' | 'createdAt' | 'updatedAt' | 'category'>>): Promise<ApiResponse<Cost>> {
+  async updateCost(id: string, data: FormData): Promise<ApiResponse<Cost>> {
     try {
-      const response = await apiClient.put<ApiResponse<Cost>>(`/costs/${id}`, data);
+      const response = await apiClient.put<ApiResponse<Cost>>(`/costs/${id}`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       return response;
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<any>>;

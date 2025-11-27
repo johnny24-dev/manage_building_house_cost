@@ -9,9 +9,38 @@ import { DesignFile } from '../entities/DesignFile.entity';
 import { Notification } from '../entities/Notification.entity';
 import { NotificationUser } from '../entities/NotificationUser.entity';
 import path from 'path';
+import fs from 'fs';
+
+const DEFAULT_DB_PATH = path.join(process.cwd(), 'database.sqlite');
+
+const resolveDbPath = () => {
+  const envPath = process.env.DB_PATH;
+  const targetPath = envPath
+    ? path.isAbsolute(envPath)
+      ? envPath
+      : path.join(process.cwd(), envPath)
+    : DEFAULT_DB_PATH;
+
+  const directory = path.dirname(targetPath);
+
+  try {
+    if (!fs.existsSync(directory)) {
+      fs.mkdirSync(directory, { recursive: true });
+    }
+    return targetPath;
+  } catch (error) {
+    console.warn(
+      '⚠️  Không thể tạo thư mục database tại',
+      directory,
+      '- sử dụng đường dẫn mặc định:',
+      DEFAULT_DB_PATH
+    );
+    return DEFAULT_DB_PATH;
+  }
+};
 
 // Đường dẫn file database SQLite
-const dbPath = process.env.DB_PATH || path.join(__dirname, '../../database.sqlite');
+const dbPath = resolveDbPath();
 
 export const AppDataSource = new DataSource({
   type: 'better-sqlite3',

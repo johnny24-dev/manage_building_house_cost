@@ -5,10 +5,41 @@ import { SuccessCode } from '../constants/statusCodes';
 import { notificationService } from '../services/notification.service';
 import { formatCurrency, formatDate } from '../utils/format';
 
+const buildPublicPath = (filePath?: string) => {
+  if (!filePath) return undefined;
+  const normalized = filePath
+    .replace(process.cwd(), '')
+    .replace(/\\/g, '/');
+  return normalized.startsWith('/') ? normalized : `/${normalized}`;
+};
+
+const buildPayload = (req: Request, options?: { isUpdate?: boolean }) => {
+  const amount =
+    req.body.amount !== undefined && req.body.amount !== null
+      ? Number(req.body.amount)
+      : undefined;
+
+  const payload: any = {
+    description: req.body.description,
+    amount,
+    categoryId: req.body.categoryId,
+    date: req.body.date,
+    status: req.body.status,
+  };
+
+  if (req.file) {
+    payload.billImageUrl = buildPublicPath(req.file.path);
+  } else if (options?.isUpdate && req.body.removeBillImage === 'true') {
+    payload.billImageUrl = null;
+  }
+
+  return payload;
+};
+
 export class CostController {
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const cost = await costService.create(req.body);
+      const cost = await costService.create(buildPayload(req));
       notificationService.queueAdminAction({
         action: 'create',
         entityName: 'chi phí',
@@ -54,7 +85,10 @@ export class CostController {
   static async update(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const cost = await costService.update(id, req.body);
+      const cost = await costService.update(
+        id,
+        buildPayload(req, { isUpdate: true })
+      );
       notificationService.queueAdminAction({
         action: 'update',
         entityName: 'chi phí',

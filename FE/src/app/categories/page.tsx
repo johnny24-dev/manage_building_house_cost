@@ -238,6 +238,66 @@ export default function CategoriesPage() {
   const remaining = totalEstimated - totalSpent - totalAdvancePaid;
   const spentPercentage = totalEstimated > 0 ? (totalSpent / totalEstimated) * 100 : 0;
 
+  const summaryItems = [
+    {
+      key: 'groups',
+      label: 'Tổng nhóm',
+      value: groups.length,
+      icon: FolderTree,
+      gradient: 'from-blue-50 to-white',
+      iconBg: 'from-blue-500 to-blue-600',
+      textColor: 'text-blue-700',
+      format: 'number',
+    },
+    {
+      key: 'estimated',
+      label: 'Tổng dự tính',
+      value: totalEstimated,
+      icon: DollarSign,
+      gradient: 'from-indigo-50 to-white',
+      iconBg: 'from-indigo-500 to-indigo-600',
+      textColor: 'text-indigo-700',
+      format: 'currency',
+    },
+    {
+      key: 'spent',
+      label: 'Tổng đã chi',
+      value: totalSpent,
+      icon: TrendingUp,
+      gradient: 'from-green-50 to-white',
+      iconBg: 'from-green-500 to-green-600',
+      textColor: 'text-green-700',
+      format: 'currency',
+    },
+    {
+      key: 'advance',
+      label: 'Tạm ứng đã thanh toán',
+      value: totalAdvancePaid,
+      icon: CreditCard,
+      gradient: 'from-cyan-50 to-white',
+      iconBg: 'from-cyan-500 to-cyan-600',
+      textColor: 'text-cyan-700',
+      format: 'currency',
+    },
+    {
+      key: 'remaining',
+      label: 'Còn lại',
+      value: remaining,
+      icon: TrendingDown,
+      gradient: remaining >= 0 ? 'from-purple-50 to-white' : 'from-red-50 to-white',
+      iconBg: remaining >= 0 ? 'from-purple-500 to-purple-600' : 'from-red-500 to-red-600',
+      textColor: remaining >= 0 ? 'text-purple-700' : 'text-red-700',
+      format: 'currency',
+    },
+  ];
+
+  const formatSummaryValue = (item: (typeof summaryItems)[number]) => {
+    if (item.format === 'currency') {
+      return formatCurrencyResponsive(item.value);
+    }
+    return item.value.toLocaleString('vi-VN');
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -246,7 +306,7 @@ export default function CategoriesPage() {
           <div className="min-w-0 flex-1">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Quản lý hạng mục chi phí</h1>
             <p className="text-sm sm:text-base text-gray-600 mt-1">
-              {isAdmin ? 'Quản lý các nhóm và hạng mục chi phí' : 'Xem danh sách hạng mục chi phí'}
+              Theo dõi tổng quan ngân sách và trạng thái từng nhóm, thao tác nhanh chỉ với vài cú chạm.
             </p>
           </div>
           {isAdmin && (
@@ -257,110 +317,66 @@ export default function CategoriesPage() {
           )}
         </div>
 
-        {/* Summary Cards - Highlighted */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
-          {/* Tổng nhóm */}
-          <Card className="hover:shadow-lg transition-shadow duration-200 h-full">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 h-full">
-              <div className="p-3 sm:p-4 bg-linear-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg shrink-0">
-                <FolderTree className="w-5 h-5 sm:w-6 sm:h-7 text-white" />
-              </div>
-              <div className="min-w-0 flex-1 w-full sm:w-auto">
-                <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1.5">Tổng nhóm</p>
-                <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 wrap-break-word leading-tight">{groups.length}</p>
-              </div>
-            </div>
-          </Card>
+        {/* Summary cards - mobile carousel */}
+        <div className="md:hidden -mx-4 px-4">
+          <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-3 custom-scrollbar">
+            {summaryItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div
+                  key={`mobile-${item.key}`}
+                  className={`min-w-[200px] snap-center rounded-2xl border border-gray-100 bg-linear-to-br ${item.gradient} p-4 shadow-sm flex gap-3`}
+                >
+                  <div className={`w-10 h-10 rounded-2xl bg-linear-to-br ${item.iconBg} flex items-center justify-center text-white`}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-gray-600">{item.label}</p>
+                    <Tooltip content={item.format === 'currency' ? formatCurrencyFull(item.value) : undefined}>
+                      <p className={`text-lg font-bold ${item.textColor} leading-tight cursor-help`}>
+                        {formatSummaryValue(item)}
+                      </p>
+                    </Tooltip>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
-          {/* Tổng dự tính - Highlight */}
-          <Card className="hover:shadow-lg transition-shadow duration-200 border-2 border-indigo-200 bg-linear-to-br from-indigo-50 to-white h-full">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 h-full">
-              <div className="p-3 sm:p-4 bg-linear-to-br from-indigo-500 to-indigo-600 rounded-xl shadow-lg shrink-0">
-                <DollarSign className="w-5 h-5 sm:w-6 sm:h-7 text-white" />
-              </div>
-              <div className="min-w-0 flex-1 w-full sm:w-auto">
-                <p className="text-xs sm:text-sm font-medium text-gray-700 mb-1.5">Tổng dự tính</p>
-                <Tooltip content={formatCurrencyFull(totalEstimated)}>
-                  <p className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-indigo-700 wrap-break-word leading-tight cursor-help">
-                    {formatCurrencyResponsive(totalEstimated)}
-                  </p>
-                </Tooltip>
-              </div>
-            </div>
-          </Card>
-
-          {/* Tổng đã chi - Important */}
-          <Card className="hover:shadow-lg transition-shadow duration-200 border-2 border-green-200 bg-linear-to-br from-green-50 to-white h-full">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 h-full">
-              <div className="p-3 sm:p-4 bg-linear-to-br from-green-500 to-green-600 rounded-xl shadow-lg shrink-0">
-                <TrendingUp className="w-5 h-5 sm:w-6 sm:h-7 text-white" />
-              </div>
-              <div className="min-w-0 flex-1 w-full sm:w-auto">
-                <p className="text-xs sm:text-sm font-medium text-gray-700 mb-1.5">Tổng đã chi</p>
-                <Tooltip content={formatCurrencyFull(totalSpent)}>
-                  <p className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-green-700 wrap-break-word leading-tight cursor-help">
-                    {formatCurrencyResponsive(totalSpent)}
-                  </p>
-                </Tooltip>
-              </div>
-            </div>
-          </Card>
-
-          {/* Tạm ứng đã thanh toán - New */}
-          <Card className="hover:shadow-lg transition-shadow.duration-200 border-2 border-cyan-200 bg-linear-to-br from-cyan-50 to-white h-full">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 h-full">
-              <div className="p-3 sm:p-4 bg-linear-to-br from-cyan-500 to-cyan-600 rounded-xl shadow-lg shrink-0">
-                <CreditCard className="w-5 h-5 sm:w-6 sm:h-7 text-white" />
-              </div>
-              <div className="min-w-0 flex-1 w-full sm:w-auto">
-                <p className="text-xs sm:text-sm font-medium text-gray-700 mb-1.5 leading-tight">Tạm ứng đã thanh toán</p>
-                <Tooltip content={formatCurrencyFull(totalAdvancePaid)}>
-                  <p className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-cyan-700 wrap-break-word leading-tight cursor-help">
-                    {formatCurrencyResponsive(totalAdvancePaid)}
-                  </p>
-                </Tooltip>
-              </div>
-            </div>
-          </Card>
-
-          {/* Còn lại - Critical */}
-          <Card className={`hover:shadow-lg transition-shadow duration-200 border-2 h-full ${
-            remaining >= 0 
-              ? 'border-purple-200 bg-linear-to-br from-purple-50 to-white' 
-              : 'border-red-200 bg-linear-to-br from-red-50 to-white'
-          }`}>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 h-full">
-              <div className={`p-3 sm:p-4 rounded-xl shadow-lg shrink-0 ${
-                remaining >= 0
-                  ? 'bg-linear-to-br from-purple-500 to-purple-600'
-                  : 'bg-linear-to-br from-red-500 to-red-600'
-              }`}>
-                <TrendingDown className={`w-5 h-5 sm:w-6 sm:h-7 text-white ${
-                  remaining < 0 ? 'rotate-180' : ''
-                }`} />
-              </div>
-              <div className="min-w-0 flex-1 w-full sm:w-auto">
-                <p className="text-xs sm:text-sm font-medium text-gray-700 mb-1.5">Còn lại</p>
-                <Tooltip content={formatCurrencyFull(remaining)}>
-                  <p
-                  className={`text-base sm:text-lg md:text-xl lg:text-2xl font-bold wrap-break-word leading-tight ${
-                      remaining >= 0 ? 'text-purple-700' : 'text-red-700'
-                    } cursor-help`}
-                  >
-                    {formatCurrencyResponsive(remaining)}
-                  </p>
-                </Tooltip>
-                {remaining < 0 && (
-                  <p
-                    className="text-xs font-semibold text-red-600 mt-1.5 wrap-break-word cursor-help"
-                    title={formatCurrencyFull(Math.abs(remaining))}
-                  >
-                    ⚠️ Vượt {formatCurrencyResponsive(Math.abs(remaining))}
-                  </p>
-                )}
-              </div>
-            </div>
-          </Card>
+        {/* Summary cards - desktop grid */}
+        <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-5">
+          {summaryItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Card
+                key={item.key}
+                className={`hover:shadow-lg transition-shadow duration-200 border-2 bg-linear-to-br ${item.gradient} h-full`}
+              >
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 h-full">
+                  <div className={`p-3 sm:p-4 rounded-2xl shadow-lg shrink-0 bg-linear-to-br ${item.iconBg}`}>
+                    <Icon className="w-5 h-5 sm:w-6 sm:h-7 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1 w-full sm:w-auto">
+                    <p className="text-xs sm:text-sm font-medium text-gray-700 mb-1.5">{item.label}</p>
+                    <Tooltip content={item.format === 'currency' ? formatCurrencyFull(item.value) : undefined}>
+                      <p className={`text-base sm:text-lg md:text-xl lg:text-2xl font-bold ${item.textColor} wrap-break-word leading-tight cursor-help`}>
+                        {formatSummaryValue(item)}
+                      </p>
+                    </Tooltip>
+                    {item.key === 'remaining' && remaining < 0 && (
+                      <p
+                        className="text-xs font-semibold text-red-600 mt-1.5 wrap-break-word cursor-help"
+                        title={formatCurrencyFull(Math.abs(remaining))}
+                      >
+                        ⚠️ Vượt {formatCurrencyResponsive(Math.abs(remaining))}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Progress Bar - Enhanced */}

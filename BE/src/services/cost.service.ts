@@ -3,6 +3,8 @@ import { Cost, CostStatus } from '../entities/Cost.entity';
 import { AppError } from '../utils/AppError';
 import { ErrorCode } from '../constants/statusCodes';
 import { costCategoryService } from './costCategory.service';
+import fs from 'fs';
+import path from 'path';
 
 const getCostRepository = () => {
   return AppDataSource.getRepository(Cost);
@@ -14,6 +16,7 @@ export interface CreateCostDto {
   amount: number;
   date: string; // ISO date string
   status?: CostStatus;
+  billImageUrl?: string | null;
 }
 
 export interface UpdateCostDto {
@@ -22,7 +25,58 @@ export interface UpdateCostDto {
   amount?: number;
   date?: string;
   status?: CostStatus;
+  billImageUrl?: string | null;
 }
+
+const normalizePublicPath = (publicPath?: string | null): string | null => {
+  if (!publicPath || publicPath.startsWith('http')) return null;
+  const trimmed = publicPath.startsWith('/')
+    ? publicPath.slice(1)
+    : publicPath;
+  return path.join(process.cwd(), trimmed);
+};
+
+const removeBillImage = async (billImageUrl?: string | null) => {
+  const absolutePath = normalizePublicPath(billImageUrl);
+  if (!absolutePath) return;
+
+  try {
+    if (fs.existsSync(absolutePath)) {
+      await fs.promises.unlink(absolutePath);
+      console.log(`🗑️  Đã xóa bill image: ${absolutePath}`);
+    }
+  } catch (error) {
+    console.error('⚠️  Không thể xóa bill image:', error);
+  }
+};
+
+let schemaChecked = false;
+
+export const ensureCostBillColumn = async (): Promise<void> => {
+  if (schemaChecked) return;
+
+  const queryRunner = AppDataSource.createQueryRunner();
+  try {
+    await queryRunner.connect();
+    const columns: Array<{ name: string }> = await queryRunner.query(
+      `PRAGMA table_info('costs')`
+    );
+    const hasColumn = columns.some(
+      (column) => column.name === 'bill_image_url'
+    );
+    if (!hasColumn) {
+      await queryRunner.query(
+        `ALTER TABLE costs ADD COLUMN bill_image_url varchar`
+      );
+      console.log('✅ Added bill_image_url column to costs table');
+    }
+    schemaChecked = true;
+  } catch (error) {
+    console.error('⚠️  Không thể đảm bảo cột bill_image_url:', error);
+  } finally {
+    await queryRunner.release();
+  }
+};
 
 export const costService = {
   /**
@@ -51,6 +105,7 @@ export const costService = {
       amount: data.amount,
       date: new Date(data.date),
       status: data.status || CostStatus.PENDING,
+      billImageUrl: data.billImageUrl || null,
     });
 
     return await repository.save(cost);
@@ -135,8 +190,23 @@ export const costService = {
     if (data.categoryId !== undefined) {
       cost.categoryId = data.categoryId;
     }
+    let previousBillImageUrl: string | null = null;
+    if (data.billImageUrl !== undefined) {
+      previousBillImageUrl = cost.billImageUrl;
+      cost.billImageUrl = data.billImageUrl;
+    }
 
-    return await repository.save(cost);
+    const updatedCost = await repository.save(cost);
+
+    if (
+      data.billImageUrl !== undefined &&
+      previousBillImageUrl &&
+      previousBillImageUrl !== data.billImageUrl
+    ) {
+      await removeBillImage(previousBillImageUrl);
+    }
+
+    return updatedCost;
   },
 
   /**
@@ -146,6 +216,7 @@ export const costService = {
     const repository = getCostRepository();
     const cost = await this.findById(id);
     await repository.remove(cost);
+    await removeBillImage(cost.billImageUrl);
     return cost;
   },
 };

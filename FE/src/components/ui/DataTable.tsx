@@ -14,6 +14,7 @@ interface DataTableProps<T> {
   onEdit?: (row: T) => void;
   onDelete?: (row: T) => void;
   isLoading?: boolean;
+  onRowClick?: (row: T) => void;
 }
 
 export default function DataTable<T extends { id: string | number }>({
@@ -22,6 +23,7 @@ export default function DataTable<T extends { id: string | number }>({
   onEdit,
   onDelete,
   isLoading = false,
+  onRowClick,
 }: DataTableProps<T>) {
   const renderCell = (row: T, accessor: Column<T>['accessor']) => {
     if (typeof accessor === 'function') {
@@ -72,7 +74,13 @@ export default function DataTable<T extends { id: string | number }>({
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {data.map((row) => (
-                <tr key={row.id} className="hover:bg-blue-50/50 transition-colors group">
+                <tr
+                  key={row.id}
+                  className={`hover:bg-blue-50/50 transition-colors group ${
+                    onRowClick ? 'cursor-pointer' : ''
+                  }`}
+                  onClick={() => onRowClick?.(row)}
+                >
                   {columns.map((column, index) => (
                     <td
                       key={index}
@@ -88,7 +96,10 @@ export default function DataTable<T extends { id: string | number }>({
                       <div className="flex items-center justify-end gap-1 sm:gap-2">
                         {onEdit && (
                           <button
-                            onClick={() => onEdit(row)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onEdit(row);
+                            }}
                             className="text-blue-600 hover:text-blue-900 px-2 sm:px-3 py-1 rounded hover:bg-blue-100 transition-colors text-xs sm:text-sm font-medium"
                             title="Sửa"
                           >
@@ -98,7 +109,10 @@ export default function DataTable<T extends { id: string | number }>({
                         )}
                         {onDelete && (
                           <button
-                            onClick={() => onDelete(row)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onDelete(row);
+                            }}
                             className="text-red-600 hover:text-red-900 px-2 sm:px-3 py-1 rounded hover:bg-red-100 transition-colors text-xs sm:text-sm font-medium"
                             title="Xóa"
                           >

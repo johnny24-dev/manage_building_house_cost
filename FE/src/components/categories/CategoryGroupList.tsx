@@ -2,7 +2,7 @@
 
 import { CategoryGroup } from '@/services/category.service';
 import Tooltip from '../ui/Tooltip';
-import { FolderTree, Edit2, Trash2, DollarSign } from 'lucide-react';
+import { FolderTree, Edit2, Trash2, DollarSign, Tag } from 'lucide-react';
 
 /**
  * Format currency đầy đủ với dấu phẩy
@@ -74,19 +74,22 @@ export default function CategoryGroupList({
     formatCurrencyResponsive ? formatCurrencyResponsive(amount) : toFull(amount);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      {/* Header */}
-      <div className="p-4 sm:p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-        <h2 className="text-base sm:text-lg font-semibold text-gray-900">
-          Danh sách hạng mục chi phí
-        </h2>
-        <p className="text-xs sm:text-sm text-gray-600 mt-1">
-          {groups.length} {groups.length === 1 ? 'hạng mục' : 'hạng mục'}
-        </p>
+    <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-4 sm:p-6 border-b border-gray-200 bg-linear-to-r from-blue-50 via-indigo-50 to-blue-50">
+        <div>
+          <p className="text-xs uppercase tracking-[0.3em] text-blue-500 font-semibold">Danh sách hạng mục</p>
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900">Quản lý nhóm chi phí</h2>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">
+            {groups.length} hạng mục được theo dõi
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 bg-white rounded-2xl border border-gray-200 px-3 py-1.5 shadow-sm">
+          <Tag className="w-4 h-4 text-blue-500" />
+          Bấm vào mỗi dòng để xem chi tiết và thao tác nhanh
+        </div>
       </div>
 
-      {/* List */}
-      <div className="divide-y divide-gray-200 overflow-hidden flex flex-col max-h-[600px]">
+      <div className="divide-y divide-gray-100 flex flex-col max-h-[620px]">
         {groups.length === 0 ? (
           <div className="p-8 sm:p-12 text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
@@ -100,18 +103,23 @@ export default function CategoryGroupList({
             </p>
           </div>
         ) : (
-          <div className="overflow-y-auto max-h-[600px] custom-scrollbar pr-2 -mr-2">
-            {groups.map((group) => (
-            <div
-              key={group.id}
-              className={`
-                p-4 sm:p-5 transition-all duration-200
-                ${selectedGroupId === group.id 
-                  ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-l-blue-500 shadow-sm' 
-                  : 'hover:bg-gray-50 hover:shadow-sm'
-                }
-              `}
-            >
+          <div className="overflow-y-auto max-h-[620px] custom-scrollbar pr-2 -mr-2">
+            {groups.map((group, index) => (
+              <div
+                key={group.id}
+                className={`
+                  relative p-4 sm:p-5 transition-all duration-200 group
+                  ${selectedGroupId === group.id
+                    ? 'bg-gradient-to-r from-blue-50/70 to-indigo-50/70 border-l-4 border-l-blue-500 shadow-sm'
+                    : 'hover:bg-gray-50 hover:shadow-sm'
+                  }
+                `}
+              >
+                <div className="absolute -left-px top-1/2 -translate-y-1/2">
+                  <span className={`w-3 h-3 rounded-full block ${
+                    selectedGroupId === group.id ? 'bg-blue-500' : 'bg-gray-200 group-hover:bg-blue-200'
+                  }`} />
+                </div>
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
                 {/* Main Content */}
                 <button
@@ -134,6 +142,12 @@ export default function CategoryGroupList({
 
                     {/* Content */}
                     <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-[0.3em]">
+                        #{String(index + 1).padStart(2, '0')}
+                        {selectedGroupId === group.id && (
+                          <span className="text-blue-500 font-semibold">Đang chọn</span>
+                        )}
+                      </div>
                       {/* Title */}
                       <h3 className={`
                         font-semibold text-base sm:text-lg transition-colors
@@ -145,13 +159,13 @@ export default function CategoryGroupList({
                         {group.name}
                       </h3>
 
-                      {/* Estimated Cost - Highlight */}
+                      {/* Estimated & actions */}
                       {group.total && (
-                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-green-50 border border-green-200 rounded-lg min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-xl min-w-0 shadow-inner">
                             <DollarSign className="w-4 h-4 text-green-600 shrink-0" />
-                            <span className="text-xs sm:text-sm font-semibold text-green-700 shrink-0">
-                              Dự tính:
+                            <span className="text-xs font-semibold text-green-700 uppercase tracking-wide">
+                              Dự tính
                             </span>
                             <Tooltip content={toFull(group.total)}>
                               <span className="text-sm sm:text-base font-bold text-green-700 truncate cursor-help">
@@ -180,44 +194,45 @@ export default function CategoryGroupList({
                   </div>
                 </button>
 
-                {/* Action Buttons */}
                 {(onEdit || onDelete) && (
                   <div className="flex items-center gap-2 sm:gap-2 shrink-0 sm:self-start">
                     {onEdit && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEdit(group);
-                        }}
-                        className={`
-                          p-2.5 sm:p-3 rounded-lg transition-all duration-200
-                          text-blue-600 hover:text-blue-700 hover:bg-blue-50
-                          active:scale-95 touch-manipulation
-                          ${selectedGroupId === group.id ? 'bg-blue-100' : ''}
-                        `}
-                        title="Sửa"
-                        aria-label="Sửa hạng mục"
-                      >
-                        <Edit2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                      </button>
+                      <Tooltip content="Sửa hạng mục">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(group);
+                          }}
+                          className={`
+                            p-2.5 sm:p-3 rounded-lg transition-all duration-200
+                            text-blue-600 hover:text-blue-700 hover:bg-blue-50
+                            active:scale-95 touch-manipulation
+                            ${selectedGroupId === group.id ? 'bg-blue-100' : 'bg-white'}
+                          `}
+                          aria-label="Sửa hạng mục"
+                        >
+                          <Edit2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </button>
+                      </Tooltip>
                     )}
                     {onDelete && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDelete(group);
-                        }}
-                        className={`
-                          p-2.5 sm:p-3 rounded-lg transition-all duration-200
-                          text-red-600 hover:text-red-700 hover:bg-red-50
-                          active:scale-95 touch-manipulation
-                          ${selectedGroupId === group.id ? 'bg-red-50' : ''}
-                        `}
-                        title="Xóa"
-                        aria-label="Xóa hạng mục"
-                      >
-                        <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                      </button>
+                      <Tooltip content="Xóa hạng mục">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(group);
+                          }}
+                          className={`
+                            p-2.5 sm:p-3 rounded-lg transition-all duration-200
+                            text-red-600 hover:text-red-700 hover:bg-red-50
+                            active:scale-95 touch-manipulation
+                            ${selectedGroupId === group.id ? 'bg-red-50' : 'bg-white'}
+                          `}
+                          aria-label="Xóa hạng mục"
+                        >
+                          <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </button>
+                      </Tooltip>
                     )}
                   </div>
                 )}

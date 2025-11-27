@@ -3,6 +3,8 @@ import { AdvancePayment, PaymentStatus } from '../entities/AdvancePayment.entity
 import { AppError } from '../utils/AppError';
 import { ErrorCode } from '../constants/statusCodes';
 import { costCategoryService } from './costCategory.service';
+import fs from 'fs';
+import path from 'path';
 
 const getAdvancePaymentRepository = () => {
   return AppDataSource.getRepository(AdvancePayment);
@@ -16,6 +18,7 @@ export interface CreateAdvancePaymentDto {
   amount: number;
   description?: string;
   status?: PaymentStatus;
+  billImageUrl?: string | null;
 }
 
 export interface UpdateAdvancePaymentDto {
@@ -26,7 +29,54 @@ export interface UpdateAdvancePaymentDto {
   amount?: number;
   description?: string;
   status?: PaymentStatus;
+  billImageUrl?: string | null;
 }
+
+const normalizePublicPath = (publicPath?: string | null): string | null => {
+  if (!publicPath || publicPath.startsWith('http')) return null;
+  const trimmed = publicPath.startsWith('/') ? publicPath.slice(1) : publicPath;
+  return path.join(process.cwd(), trimmed);
+};
+
+const removeBillImage = async (billImageUrl?: string | null) => {
+  const absolutePath = normalizePublicPath(billImageUrl);
+  if (!absolutePath) return;
+
+  try {
+    if (fs.existsSync(absolutePath)) {
+      await fs.promises.unlink(absolutePath);
+      console.log(`🗑️  Đã xóa advance bill image: ${absolutePath}`);
+    }
+  } catch (error) {
+    console.error('⚠️  Không thể xóa advance bill image:', error);
+  }
+};
+
+let advanceSchemaChecked = false;
+
+export const ensureAdvanceBillColumn = async (): Promise<void> => {
+  if (advanceSchemaChecked) return;
+
+  const queryRunner = AppDataSource.createQueryRunner();
+  try {
+    await queryRunner.connect();
+    const columns: Array<{ name: string }> = await queryRunner.query(
+      `PRAGMA table_info('advance_payments')`
+    );
+    const hasColumn = columns.some((column) => column.name === 'bill_image_url');
+    if (!hasColumn) {
+      await queryRunner.query(
+        `ALTER TABLE advance_payments ADD COLUMN bill_image_url varchar`
+      );
+      console.log('✅ Added bill_image_url column to advance_payments table');
+    }
+    advanceSchemaChecked = true;
+  } catch (error) {
+    console.error('⚠️  Không thể đảm bảo cột bill_image_url cho advance_payments:', error);
+  } finally {
+    await queryRunner.release();
+  }
+};
 
 export const advancePaymentService = {
   /**
@@ -59,6 +109,7 @@ export const advancePaymentService = {
       amount: data.amount,
       description: data.description?.trim(),
       status: data.status || PaymentStatus.PLANNED,
+      billImageUrl: data.billImageUrl || null,
     });
     return await repository.save(payment);
   },
@@ -136,8 +187,23 @@ export const advancePaymentService = {
     if (data.status !== undefined) {
       payment.status = data.status;
     }
+    let previousBillImageUrl: string | null = null;
+    if (data.billImageUrl !== undefined) {
+      previousBillImageUrl = payment.billImageUrl;
+      payment.billImageUrl = data.billImageUrl;
+    }
 
-    return await repository.save(payment);
+    const updatedPayment = await repository.save(payment);
+
+    if (
+      data.billImageUrl !== undefined &&
+      previousBillImageUrl &&
+      previousBillImageUrl !== data.billImageUrl
+    ) {
+      await removeBillImage(previousBillImageUrl);
+    }
+
+    return updatedPayment;
   },
 
   /**
@@ -147,6 +213,7 @@ export const advancePaymentService = {
     const repository = getAdvancePaymentRepository();
     const payment = await this.findById(id);
     await repository.remove(payment);
+    await removeBillImage(payment.billImageUrl);
     return payment;
   },
 
