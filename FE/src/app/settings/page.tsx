@@ -906,7 +906,7 @@ export default function SettingsPage() {
               <div className="mt-3 space-y-1 text-sm text-gray-600">
                 <p>
                   Email hỗ trợ:{' '}
-                  <span className="font-medium text-gray-900">support@mange-cost.com</span>
+                  <span className="font-medium text-gray-900">namng.work@gmail.com</span>
                 </p>
                 <p>
                   Hotline: <span className="font-medium text-gray-900">1900 636 868</span>

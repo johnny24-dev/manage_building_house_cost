@@ -3,6 +3,9 @@ import { CostCategory, CostCategoryType } from '../entities/CostCategory.entity'
 import { AdvancePayment, PaymentStatus } from '../entities/AdvancePayment.entity';
 import { CapitalAllocation } from '../entities/CapitalAllocation.entity';
 import { Cost, CostStatus } from '../entities/Cost.entity';
+import ExcelJS from 'exceljs';
+import fs from 'fs';
+import path from 'path';
 
 const getCostCategoryRepository = () => {
   return AppDataSource.getRepository(CostCategory);
@@ -193,15 +196,53 @@ async function buildReportData(): Promise<{
   return { summary, costs: allCosts };
 }
 
-const escapeCsv = (value: string | number | Date | null | undefined): string => {
-  if (value === null || value === undefined) {
-    return '';
+const SUPPORTED_IMAGE_EXTENSIONS: Record<string, 'png' | 'jpeg'> = {
+  '.png': 'png',
+  '.jpg': 'jpeg',
+  '.jpeg': 'jpeg',
+};
+
+const statusLabelMap: Record<CostStatus, string> = {
+  [CostStatus.PAID]: 'Đã thanh toán',
+  [CostStatus.PENDING]: 'Chờ thanh toán',
+  [CostStatus.CANCELLED]: 'Đã hủy',
+};
+
+const currencyFormat = '#,##0" ₫"';
+const dateFormat = 'dd/mm/yyyy';
+
+const resolveBillImage = (
+  billImageUrl?: string | null
+):
+  | { type: 'file'; absolutePath: string; extension: 'png' | 'jpeg' }
+  | { type: 'external'; url: string }
+  | null => {
+  if (!billImageUrl) {
+    return null;
   }
-  const stringValue = value instanceof Date ? value.toISOString() : String(value);
-  if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
-    return `"${stringValue.replace(/"/g, '""')}"`;
+
+  if (billImageUrl.startsWith('http')) {
+    return { type: 'external', url: billImageUrl };
   }
-  return stringValue;
+
+  const normalized = billImageUrl.startsWith('/') ? billImageUrl.slice(1) : billImageUrl;
+  const absolutePath = path.join(process.cwd(), normalized);
+
+  if (!fs.existsSync(absolutePath)) {
+    return null;
+  }
+
+  const ext = path.extname(absolutePath).toLowerCase();
+  const extension = SUPPORTED_IMAGE_EXTENSIONS[ext];
+  if (!extension) {
+    return null;
+  }
+
+  return {
+    type: 'file',
+    absolutePath,
+    extension,
+  };
 };
 
 export const dashboardService = {
@@ -396,75 +437,201 @@ export const dashboardService = {
   },
 
   /**
-   * Xuất báo cáo chi tiết dưới dạng CSV
+   * Xuất báo cáo chi tiết dưới dạng Excel (.xlsx) kèm ảnh hóa đơn
    */
-  async generateReportCSV(): Promise<{ filename: string; content: Buffer }> {
+  async generateReportExcel(): Promise<{ filename: string; buffer: Buffer }> {
     const { summary, costs } = await buildReportData();
-    const lines: string[] = [];
 
-    lines.push('BÁO CÁO CHI TIẾT');
-    lines.push(`Ngày xuất,${escapeCsv(new Date().toLocaleString('vi-VN'))}`);
-    lines.push('');
-    lines.push('TỔNG QUAN');
-    lines.push(`Tổng chi phí,${escapeCsv(summary.totalCost)}`);
-    lines.push(`Chi phí trung bình/tháng,${escapeCsv(summary.averageCostPerMonth)}`);
-    lines.push(
-      `Hạng mục lớn nhất,${
+    const workbook = new ExcelJS.Workbook();
+    workbook.created = new Date();
+    workbook.modified = new Date();
+    workbook.creator = 'Mange Cost';
+    workbook.calcProperties.fullCalcOnLoad = true;
+
+    /**
+     * Sheet: Tổng quan
+     */
+    const overviewSheet = workbook.addWorksheet('Tổng quan', {
+      properties: { tabColor: { argb: 'FF2563EB' } },
+      views: [{ state: 'frozen', ySplit: 1 }],
+    });
+
+    overviewSheet.mergeCells('A1', 'E1');
+    const titleCell = overviewSheet.getCell('A1');
+    titleCell.value = 'BÁO CÁO CHI TIẾT CHI PHÍ';
+    titleCell.font = { size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
+    titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+    titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1D4ED8' } };
+    overviewSheet.getRow(1).height = 32;
+
+    const metaData: Array<[string, any, 'currency' | 'date' | null]> = [
+      ['Ngày xuất', new Date(), 'date'],
+      ['Tổng chi phí', summary.totalCost, 'currency'],
+      ['Chi phí trung bình/tháng', summary.averageCostPerMonth, 'currency'],
+      [
+        'Hạng mục lớn nhất',
         summary.largestCategory
-          ? escapeCsv(`${summary.largestCategory.name} (${summary.largestCategory.amount})`)
-          : ''
-      }`
-    );
-    lines.push(`Số giao dịch,${escapeCsv(summary.totalTransactions)}`);
-    lines.push('');
+          ? `${summary.largestCategory.name} (${summary.largestCategory.amount.toLocaleString('vi-VN')} ₫)`
+          : 'Chưa xác định',
+        null,
+      ],
+      ['Số giao dịch', summary.totalTransactions, null],
+    ];
 
-    lines.push('THỐNG KÊ THEO THÁNG');
-    lines.push('Tháng,Tổng chi phí,Số giao dịch');
+    overviewSheet.addRow([]);
+    metaData.forEach(([label, value, type]) => {
+      const row = overviewSheet.addRow([label, value]);
+      row.getCell(1).font = { bold: true };
+      row.getCell(2).alignment = { horizontal: 'left' };
+      if (type === 'currency') {
+        row.getCell(2).numFmt = currencyFormat;
+      }
+      if (type === 'date') {
+        row.getCell(2).numFmt = dateFormat;
+      }
+    });
+
+    overviewSheet.addRow([]);
+    const monthHeader = overviewSheet.addRow(['Tháng', 'Tổng chi phí', 'Số giao dịch']);
+    monthHeader.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FF1F2937' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+        bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+      };
+    });
     summary.costByMonth.forEach((item) => {
-      lines.push(
-        [item.month, item.total, item.count].map(escapeCsv).join(',')
-      );
+      const row = overviewSheet.addRow([item.month, item.total, item.count]);
+      row.getCell(2).numFmt = currencyFormat;
     });
-    lines.push('');
 
-    lines.push('THỐNG KÊ THEO HẠNG MỤC');
-    lines.push('Hạng mục,Tổng chi phí,Số giao dịch');
+    overviewSheet.addRow([]);
+    const categoryHeader = overviewSheet.addRow(['Hạng mục', 'Tổng chi phí', 'Số giao dịch']);
+    categoryHeader.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FF1F2937' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+        bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+      };
+    });
     summary.costByCategory.forEach((item) => {
-      lines.push(
-        [item.categoryName, item.total, item.count].map(escapeCsv).join(',')
-      );
+      const row = overviewSheet.addRow([item.categoryName, item.total, item.count]);
+      row.getCell(2).numFmt = currencyFormat;
     });
-    lines.push('');
 
-    lines.push('THỐNG KÊ THANH TOÁN');
-    lines.push(`Đã thanh toán,${escapeCsv(summary.paymentStatistics.paid)}`);
-    lines.push(`Chờ thanh toán,${escapeCsv(summary.paymentStatistics.pending)}`);
-    lines.push(`Đã hủy,${escapeCsv(summary.paymentStatistics.cancelled)}`);
-    lines.push(`Tổng cộng,${escapeCsv(summary.paymentStatistics.total)}`);
-    lines.push('');
+    overviewSheet.addRow([]);
+    const paymentHeader = overviewSheet.addRow(['Thống kê thanh toán', 'Giá trị']);
+    paymentHeader.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FF1F2937' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+        bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+      };
+    });
+    const paymentRows: Array<[string, number]> = [
+      ['Đã thanh toán', summary.paymentStatistics.paid],
+      ['Chờ thanh toán', summary.paymentStatistics.pending],
+      ['Đã hủy', summary.paymentStatistics.cancelled],
+      ['Tổng cộng', summary.paymentStatistics.total],
+    ];
+    paymentRows.forEach(([label, value]) => {
+      const row = overviewSheet.addRow([label, value]);
+      row.getCell(2).numFmt = currencyFormat;
+    });
 
-    lines.push('CHI TIẾT CÁC KHOẢN CHI');
-    lines.push('STT,Tên chi phí,Hạng mục,Số tiền,Ngày,Trạng thái');
+    overviewSheet.columns = [
+      { key: 'label', width: 32 },
+      { key: 'value', width: 28 },
+      { key: 'value2', width: 18 },
+      { key: 'value3', width: 18 },
+      { key: 'value4', width: 18 },
+    ];
+
+    /**
+     * Sheet: Chi tiết chi phí
+     */
+    const detailSheet = workbook.addWorksheet('Chi tiết chi phí', {
+      views: [{ state: 'frozen', ySplit: 1 }],
+    });
+    detailSheet.columns = [
+      { header: 'STT', key: 'index', width: 6 },
+      { header: 'Mô tả', key: 'description', width: 40 },
+      { header: 'Hạng mục', key: 'category', width: 24 },
+      { header: 'Số tiền', key: 'amount', width: 18 },
+      { header: 'Ngày', key: 'date', width: 16 },
+      { header: 'Trạng thái', key: 'status', width: 18 },
+      { header: 'Ảnh hóa đơn', key: 'bill', width: 25 },
+    ];
+    detailSheet.getRow(1).eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1D4ED8' } };
+    });
+
+    const billColumnIndex = 7;
+
     costs.forEach((cost, index) => {
-      lines.push(
-        [
-          index + 1,
-          cost.description || 'Không có',
-          cost.category?.name || 'Không xác định',
-          Number(cost.amount) || 0,
-          new Date(cost.date).toISOString().split('T')[0],
-          cost.status,
-        ]
-          .map(escapeCsv)
-          .join(',')
-      );
+      const amount = Number(cost.amount) || 0;
+      const dateValue = cost.date ? new Date(cost.date) : undefined;
+      const row = detailSheet.addRow({
+        index: index + 1,
+        description: cost.description || 'Không có mô tả',
+        category: cost.category?.name || 'Không xác định',
+        amount,
+        date: dateValue,
+        status: statusLabelMap[cost.status as CostStatus] || cost.status,
+        bill: cost.billImageUrl ? 'Đính kèm' : 'Không có',
+      });
+
+      row.getCell(4).numFmt = currencyFormat;
+      if (dateValue) {
+        row.getCell(5).numFmt = dateFormat;
+      }
+      row.getCell(2).alignment = { vertical: 'top', wrapText: true };
+      row.getCell(3).alignment = { vertical: 'top', wrapText: true };
+      row.getCell(6).alignment = { vertical: 'middle' };
+      row.getCell(7).alignment = { vertical: 'middle', horizontal: 'center' };
+
+      if (cost.billImageUrl) {
+        const billInfo = resolveBillImage(cost.billImageUrl);
+        if (billInfo?.type === 'file') {
+          const imageId = workbook.addImage({
+            filename: billInfo.absolutePath,
+            extension: billInfo.extension,
+          });
+          const rowNumber = row.number;
+          detailSheet.addImage(imageId, {
+            tl: { col: billColumnIndex - 1 + 0.1, row: rowNumber - 1 + 0.1 },
+            ext: { width: 120, height: 80 },
+          });
+          row.height = Math.max(row.height || 18, 80);
+          row.getCell(billColumnIndex).value = '';
+        } else if (billInfo?.type === 'external') {
+          row.getCell(billColumnIndex).value = {
+            text: 'Xem ảnh',
+            hyperlink: billInfo.url,
+          };
+          row.getCell(billColumnIndex).font = { color: { argb: 'FF2563EB' }, underline: true };
+        }
+      }
     });
 
-    const csvContent = '\uFEFF' + lines.join('\r\n');
-    const filename = `bao_cao_chi_tiet_${new Date().toISOString().split('T')[0]}.csv`;
+    detailSheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return;
+      row.border = {
+        bottom: { style: 'hair', color: { argb: 'FFD1D5DB' } },
+      };
+    });
+
+    const filename = `bao_cao_chi_tiet_${new Date().toISOString().split('T')[0]}.xlsx`;
+    const buffer = await workbook.xlsx.writeBuffer();
+
     return {
       filename,
-      content: Buffer.from(csvContent, 'utf-8'),
+      buffer: Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer),
     };
   },
 };

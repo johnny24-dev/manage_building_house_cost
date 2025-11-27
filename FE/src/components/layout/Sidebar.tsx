@@ -173,7 +173,7 @@ export default function Sidebar() {
           {/* Footer */}
           <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 shrink-0">
             <p className="text-xs text-gray-500 text-center">
-              © 2024 Quản lý Chi phí
+             {`© ${new Date().getFullYear()} Quản lý Chi phí`}
             </p>
           </div>
         </div>

@@ -29,14 +29,17 @@ export class DashboardController {
   }
 
   /**
-   * Xuất báo cáo chi tiết (CSV)
+   * Xuất báo cáo chi tiết (Excel)
    */
   static async exportReport(req: Request, res: Response, next: NextFunction) {
     try {
-      const { filename, content } = await dashboardService.generateReportCSV();
-      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      const { filename, buffer } = await dashboardService.generateReportExcel();
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      return res.send(content);
+      return res.send(buffer);
     } catch (error) {
       next(error);
     }

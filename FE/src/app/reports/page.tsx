@@ -10,6 +10,7 @@ import ExpenseChart from '@/components/charts/ExpenseChart';
 import CategoryChart from '@/components/charts/CategoryChart';
 import Button from '@/components/ui/Button';
 import reportService, { ReportSummary } from '@/services/report.service';
+import { useToast } from '@/components/ui/Toast';
 
 const formatCurrencyFull = (amount: number) =>
   new Intl.NumberFormat('vi-VN', {
@@ -35,6 +36,7 @@ export default function ReportsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [isExporting, setIsExporting] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     loadReport();
@@ -61,13 +63,23 @@ export default function ReportsPage() {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `bao_cao_chi_tiet_${new Date().toISOString().split('T')[0]}.csv`;
+      link.download = `bao_cao_chi_tiet_${new Date().toISOString().split('T')[0]}.xlsx`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+      showToast({
+        type: 'success',
+        title: 'Đã xuất báo cáo',
+        description: 'File Excel đã được tải xuống thiết bị của bạn.',
+      });
     } catch (err: any) {
-      alert(err.message || 'Không thể xuất báo cáo');
+      console.error('Export report failed:', err);
+      showToast({
+        type: 'error',
+        title: 'Không thể xuất báo cáo',
+        description: err.message || 'Vui lòng thử lại sau.',
+      });
     } finally {
       setIsExporting(false);
     }
