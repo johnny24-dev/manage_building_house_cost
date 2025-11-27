@@ -8,6 +8,7 @@ import { scheduleDatabaseBackup } from './jobs/databaseBackup.job';
 import { ensureCostBillColumn } from './services/cost.service';
 import { ensureAdvanceBillColumn } from './services/advancePayment.service';
 import { ensureOTPTable } from './services/otp.service';
+import { ensureAllTablesExist } from './utils/schemaEnsurer';
 
 // Routes
 import authRoutes from './routes/auth.routes';
@@ -73,6 +74,7 @@ app.use(errorHandler);
 export const startServer = async (): Promise<void> => {
   try {
     await initializeDatabase();
+    await ensureAllTablesExist();
     
     // Tạo super admin nếu chưa có
     const { createDefaultSuperAdmin } = await import('./services/auth.service');
