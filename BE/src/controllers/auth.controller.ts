@@ -1,16 +1,29 @@
 import { Request, Response, NextFunction } from 'express';
-import { loginService, registerService } from '../services/auth.service';
+import { loginService, registerService, sendRegisterOTP } from '../services/auth.service';
 import { sendSuccess } from '../utils/response';
 import { SuccessCode } from '../constants/statusCodes';
 
 export class AuthController {
   /**
-   * Đăng ký người dùng mới (chỉ tạo viewer)
+   * Gửi OTP để đăng ký
+   */
+  static async sendRegisterOTP(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email } = req.body;
+      const result = await sendRegisterOTP(email);
+      return sendSuccess(res, SuccessCode.OTP_SENT, result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Đăng ký người dùng mới sau khi xác thực OTP (chỉ tạo viewer)
    */
   static async register(req: Request, res: Response, next: NextFunction) {
     try {
-      const { email, password } = req.body;
-      const result = await registerService({ email, password });
+      const { email, password, otpCode } = req.body;
+      const result = await registerService({ email, password, otpCode });
       return sendSuccess(res, SuccessCode.REGISTER_SUCCESS, result);
     } catch (error) {
       next(error);

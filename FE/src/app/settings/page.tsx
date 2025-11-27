@@ -17,7 +17,10 @@ import {
   Trash2,
   Loader2,
   Crown,
+  X,
+  Mail,
 } from 'lucide-react';
+import OTPForm from '@/components/auth/OTPForm';
 import settingsService, {
   UpdateNotificationsDto,
   UpdateProfileDto,
@@ -45,6 +48,10 @@ export default function SettingsPage() {
     newPassword: '',
     confirmPassword: '',
   });
+  const [showOtpForm, setShowOtpForm] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingNotifications, setSavingNotifications] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
@@ -168,7 +175,7 @@ export default function SettingsPage() {
     }
   };
 
-  const handleChangePassword = async () => {
+  const handleSendOTP = async () => {
     if (!passwordForm.currentPassword || !passwordForm.newPassword) {
       showToast({
         type: 'warning',
@@ -184,13 +191,75 @@ export default function SettingsPage() {
       });
       return;
     }
+    // Validate password strength
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+    if (!passwordRegex.test(passwordForm.newPassword) || passwordForm.newPassword.length < 8) {
+      showToast({
+        type: 'warning',
+        title: 'Mật khẩu không đủ mạnh',
+        description: 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường và số',
+      });
+      return;
+    }
+    try {
+      setSendingOtp(true);
+      await settingsService.sendChangePasswordOTP();
+      setShowOtpForm(true);
+      showToast({
+        type: 'success',
+        title: 'Đã gửi mã OTP',
+        description: 'Vui lòng kiểm tra email và nhập mã OTP để hoàn tất đổi mật khẩu',
+      });
+    } catch (error: any) {
+      showToast({
+        type: 'error',
+        title: 'Không thể gửi mã OTP',
+        description: error.message,
+      });
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    try {
+      setOtpLoading(true);
+      await settingsService.sendChangePasswordOTP();
+      showToast({
+        type: 'success',
+        title: 'Đã gửi lại mã OTP',
+        description: 'Vui lòng kiểm tra email',
+      });
+    } catch (error: any) {
+      showToast({
+        type: 'error',
+        title: 'Không thể gửi lại mã OTP',
+        description: error.message,
+      });
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!otpCode || otpCode.length !== 6) {
+      showToast({
+        type: 'warning',
+        title: 'Mã OTP không hợp lệ',
+        description: 'Vui lòng nhập đúng 6 chữ số',
+      });
+      return;
+    }
     try {
       setChangingPassword(true);
       await settingsService.updatePassword({
         currentPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword,
+        otpCode,
       });
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setOtpCode('');
+      setShowOtpForm(false);
       showToast({
         type: 'success',
         title: 'Đổi mật khẩu thành công',
@@ -204,6 +273,11 @@ export default function SettingsPage() {
     } finally {
       setChangingPassword(false);
     }
+  };
+
+  const handleCancelChangePassword = () => {
+    setShowOtpForm(false);
+    setOtpCode('');
   };
 
   const handleAvatarButtonClick = () => {
@@ -553,60 +627,106 @@ export default function SettingsPage() {
             Đảm bảo mật khẩu đủ mạnh và được cập nhật định kỳ để bảo vệ dữ liệu dự án của bạn.
           </p>
           <div className="space-y-4">
-            <div className="p-4 rounded-2xl border border-gray-200">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-gray-100 rounded-lg text-gray-700">
-                  <Shield className="w-5 h-5" />
+            {!showOtpForm ? (
+              <div className="p-4 rounded-2xl border border-gray-200 bg-gray-50/50">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-blue-100 rounded-lg text-blue-700">
+                    <Shield className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-900">Đổi mật khẩu</h4>
+                    <p className="text-sm text-gray-600">Tối thiểu 8 ký tự, bao gồm chữ hoa, chữ thường và số</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-medium text-gray-900">Đổi mật khẩu</h4>
-                  <p className="text-sm text-gray-600">Tối thiểu 8 ký tự, bao gồm chữ hoa, chữ thường và số</p>
+                <div className="space-y-4">
+                  <Input
+                    label="Mật khẩu hiện tại"
+                    type="password"
+                    value={passwordForm.currentPassword}
+                    onChange={(e) =>
+                      setPasswordForm({ ...passwordForm, currentPassword: e.target.value })
+                    }
+                    disabled={sendingOtp}
+                  />
+                  <Input
+                    label="Mật khẩu mới"
+                    type="password"
+                    value={passwordForm.newPassword}
+                    onChange={(e) =>
+                      setPasswordForm({ ...passwordForm, newPassword: e.target.value })
+                    }
+                    disabled={sendingOtp}
+                  />
+                  <Input
+                    label="Xác nhận mật khẩu mới"
+                    type="password"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) =>
+                      setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })
+                    }
+                    disabled={sendingOtp}
+                  />
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
+                  <p className="text-sm text-gray-500">
+                    Sau khi nhập mật khẩu, bạn sẽ nhận mã OTP qua email để xác thực.
+                  </p>
+                  <Button onClick={handleSendOTP} disabled={sendingOtp}>
+                    {sendingOtp ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 inline animate-spin" />
+                        Đang gửi OTP...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="w-4 h-4 mr-2 inline" />
+                        Gửi mã OTP
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  label="Mật khẩu hiện tại"
-                  type="password"
-                  value={passwordForm.currentPassword}
-                  onChange={(e) =>
-                    setPasswordForm({ ...passwordForm, currentPassword: e.target.value })
-                  }
-                />
-                <Input
-                  label="Mật khẩu mới"
-                  type="password"
-                  value={passwordForm.newPassword}
-                  onChange={(e) =>
-                    setPasswordForm({ ...passwordForm, newPassword: e.target.value })
-                  }
+            ) : (
+              <div className="p-6 rounded-2xl border-2 border-blue-200 bg-gradient-to-br from-blue-50/50 via-white to-blue-50/30">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-lg text-blue-700">
+                      <Shield className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">Xác thực đổi mật khẩu</h4>
+                      <p className="text-sm text-gray-600">Nhập mã OTP đã gửi đến email của bạn</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleCancelChangePassword}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Hủy"
+                  >
+                    <X className="w-5 h-5 text-gray-500" />
+                  </button>
+                </div>
+                <OTPForm
+                  email={profile.email}
+                  onVerify={async (code: string) => {
+                    setOtpCode(code);
+                    await handleChangePassword();
+                  }}
+                  onResend={handleResendOTP}
+                  isLoading={changingPassword || otpLoading}
                 />
               </div>
-              <div className="mt-4">
-                <Input
-                  label="Xác nhận mật khẩu mới"
-                  type="password"
-                  value={passwordForm.confirmPassword}
-                  onChange={(e) =>
-                    setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })
-                  }
-                />
+            )}
+            {!showOtpForm && (
+              <div className="rounded-2xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800">
+                <p className="font-medium mb-1">💡 Gợi ý bảo mật</p>
+                <ul className="list-disc list-inside space-y-1 text-xs">
+                  <li>Đổi mật khẩu định kỳ mỗi 60 ngày để tăng bảo mật</li>
+                  <li>Không sử dụng mật khẩu đã dùng trước đó</li>
+                  <li>Kích hoạt xác thực hai lớp (sắp ra mắt) để tăng bảo mật tài khoản</li>
+                </ul>
               </div>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
-                <p className="text-sm text-gray-500">
-                  Gợi ý: kích hoạt xác thực hai lớp (sắp ra mắt) để tăng bảo mật tài khoản.
-                </p>
-                <Button onClick={handleChangePassword} disabled={changingPassword}>
-                  {changingPassword ? (
-                    'Đang đổi mật khẩu...'
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4 mr-2 inline" />
-                      Đổi mật khẩu
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
+            )}
           </div>
         </Card>
 

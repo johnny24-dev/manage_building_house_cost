@@ -11,6 +11,11 @@ export interface LoginCredentials {
 export interface RegisterData {
   email: string;
   password: string;
+  otpCode?: string;
+}
+
+export interface SendOTPResponse {
+  expiresAt: string;
 }
 
 export interface AuthResponse {
@@ -40,9 +45,33 @@ const authService = {
     }
   },
 
+  async sendRegisterOTP(email: string): Promise<ApiResponse<SendOTPResponse>> {
+    try {
+      console.log('📧 Sending OTP to:', email);
+      const response = await apiClient.post<ApiResponse<SendOTPResponse>>('/auth/send-register-otp', { email });
+      console.log('✅ OTP sent successfully:', response);
+      return response;
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse<any>>;
+      console.error('❌ Send OTP failed:', {
+        status: axiosError.response?.status,
+        data: axiosError.response?.data,
+        message: axiosError.message,
+      });
+      const errorMessage = 
+        axiosError.response?.data?.message || 
+        axiosError.message ||
+        'Không thể gửi mã OTP. Vui lòng thử lại.';
+      throw new Error(errorMessage);
+    }
+  },
+
   async register(data: RegisterData): Promise<ApiResponse<AuthResponse>> {
     try {
       console.log('📝 Attempting register with:', { email: data.email });
+      if (!data.otpCode) {
+        throw new Error('Mã OTP là bắt buộc');
+      }
       const response = await apiClient.post<ApiResponse<AuthResponse>>('/auth/register', data);
       console.log('✅ Register successful:', response);
       return response;

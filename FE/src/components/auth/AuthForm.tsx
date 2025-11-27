@@ -98,25 +98,23 @@ export default function AuthForm({ mode, onSubmit, isLoading: externalLoading, e
       return;
     }
 
-    // Nếu không có onSubmit, gọi API trực tiếp
+    // Nếu không có onSubmit, gọi API trực tiếp (chỉ cho login)
+    if (mode === 'register') {
+      setError('Đăng ký yêu cầu xác thực OTP. Vui lòng sử dụng trang đăng ký.');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
 
     try {
-      if (mode === 'login') {
-        console.log('🔐 AuthForm: Attempting login with:', { email: formData.email });
-        await login(formData.email, formData.password);
-        console.log('✅ AuthForm: Login successful, redirecting...');
-        router.push('/');
-      } else {
-        console.log('📝 AuthForm: Attempting register with:', { email: formData.email });
-        await register(formData.email, formData.password);
-        console.log('✅ AuthForm: Register successful, redirecting...');
-        router.push('/');
-      }
+      console.log('🔐 AuthForm: Attempting login with:', { email: formData.email });
+      await login(formData.email, formData.password);
+      console.log('✅ AuthForm: Login successful, redirecting...');
+      router.push('/');
     } catch (err: any) {
       console.error('❌ AuthForm: Error:', err);
-      const errorMessage = err.message || (mode === 'login' ? 'Đăng nhập thất bại. Vui lòng thử lại.' : 'Đăng ký thất bại. Vui lòng thử lại.');
+      const errorMessage = err.message || 'Đăng nhập thất bại. Vui lòng thử lại.';
       setError(errorMessage);
     } finally {
       setIsLoading(false);

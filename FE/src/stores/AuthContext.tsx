@@ -12,7 +12,8 @@ interface AuthContextType {
   isLoading: boolean;
   isAdmin: boolean; // true nếu user là super_admin
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  sendRegisterOTP: (email: string) => Promise<{ expiresAt: string }>;
+  register: (email: string, password: string, otpCode: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -68,9 +69,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (email: string, password: string) => {
+  const sendRegisterOTP = async (email: string): Promise<{ expiresAt: string }> => {
     try {
-      const response = await authService.register({ email, password });
+      const response = await authService.sendRegisterOTP(email);
+      if (response.success && response.data) {
+        return response.data;
+      } else {
+        throw new Error('Không thể gửi mã OTP. Phản hồi không hợp lệ.');
+      }
+    } catch (error: any) {
+      console.error('Send OTP error:', error);
+      throw error;
+    }
+  };
+
+  const register = async (email: string, password: string, otpCode: string) => {
+    try {
+      const response = await authService.register({ email, password, otpCode });
       
       // Response structure: { success, code, message, data: { user, token } }
       if (response.success && response.data) {
@@ -106,6 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         isAdmin,
         login,
+        sendRegisterOTP,
         register,
         logout,
       }}

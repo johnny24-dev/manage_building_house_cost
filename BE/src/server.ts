@@ -7,6 +7,7 @@ import { initializeDatabase } from './config/database';
 import { scheduleDatabaseBackup } from './jobs/databaseBackup.job';
 import { ensureCostBillColumn } from './services/cost.service';
 import { ensureAdvanceBillColumn } from './services/advancePayment.service';
+import { ensureOTPTable } from './services/otp.service';
 
 // Routes
 import authRoutes from './routes/auth.routes';
@@ -78,6 +79,7 @@ export const startServer = async (): Promise<void> => {
     await createDefaultSuperAdmin();
     await ensureCostBillColumn();
     await ensureAdvanceBillColumn();
+    await ensureOTPTable();
     scheduleDatabaseBackup();
     
     app.listen(PORT, () => {

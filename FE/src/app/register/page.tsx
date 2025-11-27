@@ -4,12 +4,19 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/stores/AuthContext';
 import { useRouter } from 'next/navigation';
 import AuthForm from '@/components/auth/AuthForm';
+import OTPForm from '@/components/auth/OTPForm';
 import Link from 'next/link';
 import { Home, Sparkles } from 'lucide-react';
 
+type RegisterStep = 'form' | 'otp';
+
 export default function RegisterPage() {
-  const { register, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { sendRegisterOTP, register, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const [step, setStep] = useState<RegisterStep>('form');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [otpExpiresAt, setOtpExpiresAt] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
 
@@ -28,16 +35,44 @@ export default function RegisterPage() {
     );
   }
 
-  const handleSubmit = async (data: any) => {
+  const handleFormSubmit = async (data: any) => {
     setIsLoading(true);
     setError('');
 
     try {
-      await register(data.email, data.password);
+      // Gửi OTP
+      const otpResponse = await sendRegisterOTP(data.email);
+      setEmail(data.email);
+      setPassword(data.password);
+      setOtpExpiresAt(otpResponse.expiresAt);
+      setStep('otp');
     } catch (err: any) {
-      setError(err.message || 'Đăng ký thất bại. Vui lòng thử lại.');
+      setError(err.message || 'Không thể gửi mã OTP. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleOTPVerify = async (otpCode: string) => {
+    setIsLoading(true);
+    setError('');
+
+    try {
+      await register(email, password, otpCode);
+    } catch (err: any) {
+      setError(err.message || 'Xác thực OTP thất bại. Vui lòng thử lại.');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    try {
+      const otpResponse = await sendRegisterOTP(email);
+      setOtpExpiresAt(otpResponse.expiresAt);
+    } catch (err: any) {
+      throw new Error(err.message || 'Không thể gửi lại mã OTP. Vui lòng thử lại.');
     }
   };
 
@@ -64,12 +99,23 @@ export default function RegisterPage() {
 
         {/* Form Card */}
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl p-6 sm:p-8 border border-white/20 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <AuthForm
-            mode="register"
-            onSubmit={handleSubmit}
-            isLoading={isLoading}
-            error={error}
-          />
+          {step === 'form' ? (
+            <AuthForm
+              mode="register"
+              onSubmit={handleFormSubmit}
+              isLoading={isLoading}
+              error={error}
+            />
+          ) : (
+            <OTPForm
+              email={email}
+              onVerify={handleOTPVerify}
+              onResend={handleResendOTP}
+              expiresAt={otpExpiresAt}
+              isLoading={isLoading}
+              error={error}
+            />
+          )}
 
           {/* Divider */}
           <div className="mt-6 mb-6">

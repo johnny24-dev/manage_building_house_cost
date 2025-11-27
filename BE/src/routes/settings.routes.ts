@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticate, requireSuperAdmin } from '../middleware/auth.middleware';
 import { SettingsController } from '../controllers/settings.controller';
 import { avatarUpload } from '../middleware/avatarUpload.middleware';
+import { changePasswordValidation, validate } from '../utils/validation';
 
 const router = Router();
 router.use(authenticate);
@@ -25,10 +26,16 @@ router.put('/profile', SettingsController.updateProfile);
 router.put('/notifications', SettingsController.updateNotifications);
 
 /**
- * @route PUT /api/settings/password
- * @desc  Đổi mật khẩu
+ * @route POST /api/settings/send-change-password-otp
+ * @desc  Gửi OTP để đổi mật khẩu
  */
-router.put('/password', SettingsController.updatePassword);
+router.post('/send-change-password-otp', SettingsController.sendChangePasswordOTP);
+
+/**
+ * @route PUT /api/settings/password
+ * @desc  Đổi mật khẩu (sau khi xác thực OTP)
+ */
+router.put('/password', changePasswordValidation, validate, SettingsController.updatePassword);
 
 /**
  * @route PUT /api/settings/avatar

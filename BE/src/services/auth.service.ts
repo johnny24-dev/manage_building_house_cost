@@ -4,6 +4,7 @@ import { AppError } from '../utils/AppError';
 import { ErrorCode } from '../constants/statusCodes';
 import { AppDataSource } from '../config/database';
 import { User, UserRole } from '../entities/User.entity';
+import { sendOTP, verifyOTP, isOTPVerified } from './otp.service';
 
 export interface LoginCredentials {
   email: string;
@@ -63,12 +64,33 @@ export const loginService = async (
 };
 
 /**
- * Đăng ký người dùng mới (chỉ tạo viewer)
+ * Gửi OTP để đăng ký
+ */
+export const sendRegisterOTP = async (email: string): Promise<{ expiresAt: Date }> => {
+  const userRepository = getUserRepository();
+
+  // Kiểm tra email đã tồn tại chưa
+  const existingUser = await userRepository.findOne({
+    where: { email: email.toLowerCase() },
+  });
+
+  if (existingUser) {
+    throw new AppError(ErrorCode.EMAIL_ALREADY_EXISTS);
+  }
+
+  // Gửi OTP
+  const { expiresAt } = await sendOTP(email, 'register');
+
+  return { expiresAt };
+};
+
+/**
+ * Đăng ký người dùng mới sau khi xác thực OTP (chỉ tạo viewer)
  */
 export const registerService = async (
-  credentials: RegisterCredentials
+  credentials: RegisterCredentials & { otpCode: string }
 ): Promise<{ user: Omit<User, 'password'>; token: string }> => {
-  const { email, password } = credentials;
+  const { email, password, otpCode } = credentials;
 
   const userRepository = getUserRepository();
 
@@ -80,6 +102,9 @@ export const registerService = async (
   if (existingUser) {
     throw new AppError(ErrorCode.EMAIL_ALREADY_EXISTS);
   }
+
+  // Verify OTP
+  await verifyOTP(email, otpCode, 'register');
 
   // Hash password
   const saltRounds = 10;

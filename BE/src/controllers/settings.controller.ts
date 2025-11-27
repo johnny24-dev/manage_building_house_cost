@@ -38,11 +38,21 @@ export class SettingsController {
     }
   }
 
+  static async sendChangePasswordOTP(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user?.userId;
+      const result = await settingsService.sendChangePasswordOTP(userId!);
+      return sendSuccess(res, SuccessCode.OTP_SENT, result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async updatePassword(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.userId;
-      const { currentPassword, newPassword } = req.body;
-      await settingsService.updatePassword(userId!, currentPassword, newPassword);
+      const { currentPassword, newPassword, otpCode } = req.body;
+      await settingsService.updatePassword(userId!, currentPassword, newPassword, otpCode);
       return sendSuccess(res, SuccessCode.SUCCESS, {
         message: 'Đổi mật khẩu thành công',
       });

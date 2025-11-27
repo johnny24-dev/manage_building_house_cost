@@ -5,6 +5,7 @@ import { AppDataSource } from '../config/database';
 import { User, UserRole } from '../entities/User.entity';
 import { AppError } from '../utils/AppError';
 import { ErrorCode } from '../constants/statusCodes';
+import { sendOTP, verifyOTP } from './otp.service';
 
 const getUserRepository = () => AppDataSource.getRepository(User);
 
@@ -89,12 +90,27 @@ export const settingsService = {
     return profile;
   },
 
-  async updatePassword(userId: string, currentPassword: string, newPassword: string) {
+  async sendChangePasswordOTP(userId: string) {
     const userRepository = getUserRepository();
     const user = await userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new AppError(ErrorCode.NOT_FOUND, 'Không tìm thấy người dùng');
     }
+
+    // Gửi OTP
+    const { expiresAt } = await sendOTP(user.email, 'change_password');
+    return { expiresAt };
+  },
+
+  async updatePassword(userId: string, currentPassword: string, newPassword: string, otpCode: string) {
+    const userRepository = getUserRepository();
+    const user = await userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new AppError(ErrorCode.NOT_FOUND, 'Không tìm thấy người dùng');
+    }
+
+    // Verify OTP
+    await verifyOTP(user.email, otpCode, 'change_password');
 
     const isValid = await bcrypt.compare(currentPassword, user.password);
     if (!isValid) {

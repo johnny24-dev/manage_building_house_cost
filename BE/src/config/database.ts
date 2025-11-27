@@ -8,6 +8,7 @@ import { AdvancePayment } from '../entities/AdvancePayment.entity';
 import { DesignFile } from '../entities/DesignFile.entity';
 import { Notification } from '../entities/Notification.entity';
 import { NotificationUser } from '../entities/NotificationUser.entity';
+import { OTP } from '../entities/OTP.entity';
 import path from 'path';
 import fs from 'fs';
 
@@ -55,6 +56,7 @@ export const AppDataSource = new DataSource({
     DesignFile,
     Notification,
     NotificationUser,
+    OTP,
   ],
   synchronize: process.env.NODE_ENV !== 'production', // Chỉ dùng trong development
   logging: process.env.NODE_ENV === 'development',

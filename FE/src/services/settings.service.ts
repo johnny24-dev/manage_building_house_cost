@@ -40,6 +40,11 @@ export interface UpdateNotificationsDto {
 export interface UpdatePasswordDto {
   currentPassword: string;
   newPassword: string;
+  otpCode: string;
+}
+
+export interface SendOTPResponse {
+  expiresAt: string;
 }
 
 const settingsService = {
@@ -86,6 +91,22 @@ const settingsService = {
         axiosError.response?.data?.message ||
           axiosError.response?.data?.error ||
           'Không thể cập nhật cài đặt thông báo'
+      );
+    }
+  },
+
+  async sendChangePasswordOTP(): Promise<ApiResponse<SendOTPResponse>> {
+    try {
+      const data = await apiClient.post<ApiResponse<SendOTPResponse>>(
+        '/settings/send-change-password-otp'
+      );
+      return data;
+    } catch (error) {
+      const axiosError = error as AxiosError<{ message?: string; error?: string }>;
+      throw new Error(
+        axiosError.response?.data?.message ||
+          axiosError.response?.data?.error ||
+          'Không thể gửi mã OTP'
       );
     }
   },
