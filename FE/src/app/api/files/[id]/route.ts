@@ -28,8 +28,11 @@ export async function GET(
     let backendBaseUrl = process.env.BACKEND_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000/api';
     
     // Nếu đang chạy trong Docker và NEXT_PUBLIC_API_URL chứa localhost, thay bằng tên service
-    if (backendBaseUrl.includes('localhost:9000')) {
-      backendBaseUrl = backendBaseUrl.replace('localhost:9000', 'backend:9000');
+    // Lấy port từ NEXT_PUBLIC_API_URL hoặc mặc định 9000
+    const backendPort = process.env.BE_PORT || '9000';
+    if (backendBaseUrl.includes('localhost')) {
+      // Thay localhost:port bằng backend:port khi chạy trong Docker
+      backendBaseUrl = backendBaseUrl.replace(/localhost:\d+/, `backend:${backendPort}`);
     }
     
     // Đảm bảo URL có /api ở cuối
