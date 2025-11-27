@@ -1,11 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Card from '@/components/ui/Card';
 import StatCard from '@/components/ui/StatCard';
 import Tooltip from '@/components/ui/Tooltip';
-import { Download, FileText, TrendingUp, DollarSign, Loader2, RefreshCw, BarChart3, PieChart as PieChartIcon, AlertCircle } from 'lucide-react';
+import {
+  Download,
+  FileText,
+  TrendingUp,
+  DollarSign,
+  Loader2,
+  RefreshCw,
+  BarChart3,
+  PieChart as PieChartIcon,
+  AlertCircle,
+  CreditCard,
+} from 'lucide-react';
 import ExpenseChart from '@/components/charts/ExpenseChart';
 import CategoryChart from '@/components/charts/CategoryChart';
 import Button from '@/components/ui/Button';
@@ -29,6 +41,28 @@ const formatCurrencyResponsive = (value: number) => {
     return `${millions.toFixed(millions % 1 === 0 ? 0 : 1)} triệu đ`;
   }
   return formatCurrencyFull(value);
+};
+
+const formatDateVN = (value: string) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'N/A';
+  return date.toLocaleDateString('vi-VN');
+};
+
+const ADVANCE_STATUS_META: Record<
+  'paid' | 'planned',
+  { label: string; badge: string; dot: string }
+> = {
+  paid: {
+    label: 'Đã giải ngân',
+    badge: 'bg-emerald-50 text-emerald-700 border border-emerald-100',
+    dot: 'bg-emerald-500',
+  },
+  planned: {
+    label: 'Đang kế hoạch',
+    badge: 'bg-amber-50 text-amber-700 border border-amber-100',
+    dot: 'bg-amber-500',
+  },
 };
 
 export default function ReportsPage() {
@@ -176,50 +210,94 @@ export default function ReportsPage() {
         </div>
 
         {/* Summary Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          <div className="transform transition-all duration-200 hover:scale-[1.02]">
-            <StatCard
-              title="Tổng chi phí"
-              value={formatCurrencyResponsive(report.totalCost)}
-              tooltip={formatCurrencyFull(report.totalCost)}
-              icon={DollarSign}
-              iconColor="text-blue-600"
-            />
-          </div>
-          <div className="transform transition-all duration-200 hover:scale-[1.02]">
-            <StatCard
-              title="Chi phí trung bình/tháng"
-              value={formatCurrencyResponsive(report.averageCostPerMonth)}
-              tooltip={formatCurrencyFull(report.averageCostPerMonth)}
-              icon={TrendingUp}
-              iconColor="text-green-600"
-            />
-          </div>
-          <div className="transform transition-all duration-200 hover:scale-[1.02]">
-            <StatCard
-              title="Hạng mục lớn nhất"
-              value={
-                report.largestCategory
-                  ? `${report.largestCategory.name}`
-                  : 'Chưa có'
-              }
-              tooltip={
-                report.largestCategory
-                  ? `${report.largestCategory.name}: ${formatCurrencyFull(report.largestCategory.amount)}`
-                  : undefined
-              }
-              icon={FileText}
-              iconColor="text-purple-600"
-            />
-          </div>
-          <div className="transform transition-all duration-200 hover:scale-[1.02]">
-            <StatCard
-              title="Số giao dịch"
-              value={report.totalTransactions.toString()}
-              icon={FileText}
-              iconColor="text-orange-600"
-            />
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4 sm:gap-5">
+          {[
+            {
+              id: 'total-cost',
+              label: 'Tổng chi phí',
+              value: formatCurrencyResponsive(report.totalCost),
+              tooltip: formatCurrencyFull(report.totalCost),
+              icon: DollarSign,
+              accent: 'bg-blue-50 text-blue-600',
+            },
+            {
+              id: 'average-cost',
+              label: 'Chi phí trung bình/tháng',
+              value: formatCurrencyResponsive(report.averageCostPerMonth),
+              tooltip: formatCurrencyFull(report.averageCostPerMonth),
+              icon: TrendingUp,
+              accent: 'bg-green-50 text-green-600',
+            },
+            {
+              id: 'largest-category',
+              label: 'Hạng mục lớn nhất',
+              value: report.largestCategory ? report.largestCategory.name : 'Chưa có',
+              tooltip: report.largestCategory
+                ? `${report.largestCategory.name}: ${formatCurrencyFull(report.largestCategory.amount)}`
+                : undefined,
+              icon: FileText,
+              accent: 'bg-purple-50 text-purple-600',
+              subValue: report.largestCategory
+                ? formatCurrencyResponsive(report.largestCategory.amount)
+                : undefined,
+            },
+            {
+              id: 'transactions',
+              label: 'Số giao dịch',
+              value: report.totalTransactions.toString(),
+              icon: FileText,
+              accent: 'bg-orange-50 text-orange-600',
+            },
+            {
+              id: 'advance-total',
+              label: 'Tổng tạm ứng',
+              value: formatCurrencyResponsive(report.advanceSummary.totalAmount),
+              tooltip: formatCurrencyFull(report.advanceSummary.totalAmount),
+              icon: CreditCard,
+              accent: 'bg-amber-50 text-amber-600',
+            },
+            {
+              id: 'advance-count',
+              label: 'Số phiếu tạm ứng',
+              value: report.advanceSummary.totalCount.toString(),
+              icon: CreditCard,
+              accent: 'bg-indigo-50 text-indigo-600',
+              subValue: `${report.advanceSummary.paidCount} đã giải ngân`,
+            },
+          ].map((stat) => (
+            <div
+              key={stat.id}
+              className="rounded-3xl border border-gray-100 bg-white/90 p-5 shadow-sm hover:shadow-lg transition-all duration-200 flex flex-col gap-4"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
+                    {stat.label}
+                  </p>
+                </div>
+                <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${stat.accent}`}>
+                  <stat.icon className="w-5 h-5" />
+                </div>
+              </div>
+              <div>
+                <div className="flex items-baseline gap-2">
+                  {stat.tooltip ? (
+                    <Tooltip content={stat.tooltip}>
+                      <p className="text-2xl font-bold text-gray-900 cursor-help">{stat.value}</p>
+                    </Tooltip>
+                  ) : (
+                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                  )}
+                  {stat.subValue && (
+                    <span className="text-sm text-gray-500 font-medium">{stat.subValue}</span>
+                  )}
+                </div>
+                {stat.id === 'advance-count' && (
+                  <p className="text-xs text-gray-500 mt-1">{stat.subValue}</p>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Charts */}
@@ -422,6 +500,118 @@ export default function ReportsPage() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card
+          title={
+            <div className="flex items-center gap-2.5">
+              <CreditCard className="w-5 h-5 text-amber-600 shrink-0" />
+              <span className="font-semibold">Phiếu tạm ứng</span>
+            </div>
+          }
+          className="hover:shadow-lg transition-shadow duration-200"
+        >
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-wrap items-center gap-3 border-b border-gray-100 pb-4">
+              {[
+                {
+                  label: 'Tổng giá trị',
+                  value: formatCurrencyResponsive(report.advanceSummary.totalAmount),
+                  accent: 'bg-amber-50 text-amber-800 border-amber-100',
+                },
+                {
+                  label: 'Đã giải ngân',
+                  value: formatCurrencyResponsive(report.advanceSummary.paidAmount),
+                  accent: 'bg-emerald-50 text-emerald-800 border-emerald-100',
+                },
+                {
+                  label: 'Đang kế hoạch',
+                  value: formatCurrencyResponsive(report.advanceSummary.plannedAmount),
+                  accent: 'bg-sky-50 text-sky-800 border-sky-100',
+                },
+                {
+                  label: 'Số phiếu',
+                  value: `${report.advanceSummary.totalCount}`,
+                  accent: 'bg-gray-50 text-gray-800 border-gray-100',
+                  sub: `${report.advanceSummary.paidCount} đã giải ngân`,
+                },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className={`min-w-[180px] flex-1 rounded-2xl border px-4 py-3 shadow-sm ${item.accent}`}
+                >
+                  <p className="text-xs uppercase tracking-[0.18em] font-semibold opacity-70">
+                    {item.label}
+                  </p>
+                  <p className="text-xl font-bold mt-1">{item.value}</p>
+                  {item.sub && <p className="text-xs text-gray-500 mt-0.5">{item.sub}</p>}
+                </div>
+              ))}
+              <Link
+                href="/advance"
+                className="text-sm font-semibold text-blue-600 hover:text-blue-800 ml-auto"
+              >
+                Xem tất cả
+              </Link>
+            </div>
+
+            <div className="mt-1">
+              {report.advanceSummary.recentAdvances.length === 0 ? (
+                <div className="text-center py-10 text-sm text-gray-500 border border-dashed border-gray-200 rounded-2xl">
+                  Chưa có phiếu tạm ứng nào.
+                </div>
+              ) : (
+                <div className="space-y-3.5">
+                  {report.advanceSummary.recentAdvances.map((advance) => (
+                    <div
+                      key={advance.id}
+                      className="p-4 rounded-2xl border border-gray-100 bg-gradient-to-r from-white via-white to-blue-50/30 hover:border-blue-200 hover:shadow-md transition-all flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+                    >
+                      <div className="flex items-start gap-4 flex-1 min-w-0">
+                        <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center font-semibold shrink-0">
+                          {advance.ticketName.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="space-y-2 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-semibold text-gray-900 text-lg truncate">
+                              {advance.ticketName}
+                            </p>
+                            <span className="text-xs text-gray-400">{formatDateVN(advance.paymentDate)}</span>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500">
+                            <span>{advance.categoryName || 'Không xác định'}</span>
+                            <span className="w-1 h-1 rounded-full bg-gray-300" />
+                            <span>{advance.phase}</span>
+                          </div>
+                          {advance.description && (
+                            <p className="text-sm text-gray-600 line-clamp-2">{advance.description}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3 shrink-0 text-right sm:text-left">
+                        <div>
+                          <p className="text-base font-bold text-gray-900">
+                            {formatCurrencyResponsive(advance.amount)}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {formatCurrencyFull(advance.amount)}
+                          </p>
+                        </div>
+                        <span
+                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${ADVANCE_STATUS_META[advance.status].badge}`}
+                        >
+                          <span
+                            className={`w-2 h-2 rounded-full ${ADVANCE_STATUS_META[advance.status].dot}`}
+                          />
+                          {ADVANCE_STATUS_META[advance.status].label}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </Card>

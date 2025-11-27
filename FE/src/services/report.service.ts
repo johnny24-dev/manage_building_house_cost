@@ -23,6 +23,28 @@ export interface PaymentStatistics {
   total: number;
 }
 
+export interface AdvanceReportItem {
+  id: string;
+  ticketName: string;
+  categoryName?: string | null;
+  amount: number;
+  paymentDate: string;
+  phase: string;
+  status: 'paid' | 'planned';
+  description?: string | null;
+  billImageUrl?: string | null;
+}
+
+export interface AdvanceReportSummary {
+  totalAmount: number;
+  paidAmount: number;
+  plannedAmount: number;
+  totalCount: number;
+  paidCount: number;
+  plannedCount: number;
+  recentAdvances: AdvanceReportItem[];
+}
+
 export interface ReportSummary {
   totalCost: number;
   averageCostPerMonth: number;
@@ -34,6 +56,7 @@ export interface ReportSummary {
   costByMonth: CostByMonth[];
   costByCategory: CostByCategory[];
   paymentStatistics: PaymentStatistics;
+  advanceSummary: AdvanceReportSummary;
 }
 
 const reportService = {

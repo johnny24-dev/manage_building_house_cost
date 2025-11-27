@@ -75,6 +75,28 @@ export interface PaymentStatistics {
   total: number;
 }
 
+export interface AdvanceReportItem {
+  id: string;
+  ticketName: string;
+  categoryName: string | null;
+  amount: number;
+  paymentDate: Date;
+  phase: string;
+  status: PaymentStatus;
+  description?: string | null;
+  billImageUrl?: string | null;
+}
+
+export interface AdvanceReportSummary {
+  totalAmount: number;
+  paidAmount: number;
+  plannedAmount: number;
+  totalCount: number;
+  paidCount: number;
+  plannedCount: number;
+  recentAdvances: AdvanceReportItem[];
+}
+
 export interface ReportSummary {
   totalCost: number;
   averageCostPerMonth: number;
@@ -86,14 +108,17 @@ export interface ReportSummary {
   costByMonth: CostByMonth[];
   costByCategory: CostByCategory[];
   paymentStatistics: PaymentStatistics;
+  advanceSummary: AdvanceReportSummary;
 }
 
 async function buildReportData(): Promise<{
   summary: ReportSummary;
   costs: Cost[];
+  advances: AdvancePayment[];
 }> {
   const costRepository = getCostRepository();
   const costCategoryRepository = getCostCategoryRepository();
+  const advancePaymentRepository = getAdvancePaymentRepository();
 
   // 1. Lấy tất cả costs với category
   const allCosts = await costRepository.find({
@@ -178,6 +203,54 @@ async function buildReportData(): Promise<{
     }
   });
 
+  // 8. Lấy toàn bộ phiếu tạm ứng
+  const allAdvances = await advancePaymentRepository.find({
+    relations: ['category'],
+    order: { paymentDate: 'ASC' },
+  });
+
+  const advanceTotals = allAdvances.reduce(
+    (acc, advance) => {
+      const amount = Number(advance.amount) || 0;
+      acc.totalAmount += amount;
+      acc.totalCount += 1;
+      if (advance.status === PaymentStatus.PAID) {
+        acc.paidAmount += amount;
+        acc.paidCount += 1;
+      } else {
+        acc.plannedAmount += amount;
+        acc.plannedCount += 1;
+      }
+      return acc;
+    },
+    {
+      totalAmount: 0,
+      paidAmount: 0,
+      plannedAmount: 0,
+      totalCount: 0,
+      paidCount: 0,
+      plannedCount: 0,
+    }
+  );
+
+  const recentAdvances: AdvanceReportItem[] = [...allAdvances]
+    .sort(
+      (a, b) =>
+        new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()
+    )
+    .slice(0, 6)
+    .map((advance) => ({
+      id: advance.id,
+      ticketName: advance.ticketName,
+      categoryName: advance.category?.name || null,
+      amount: Number(advance.amount) || 0,
+      paymentDate: advance.paymentDate,
+      phase: advance.phase,
+      status: advance.status,
+      description: advance.description,
+      billImageUrl: advance.billImageUrl,
+    }));
+
   const summary: ReportSummary = {
     totalCost,
     averageCostPerMonth,
@@ -191,9 +264,13 @@ async function buildReportData(): Promise<{
     costByMonth,
     costByCategory,
     paymentStatistics,
+    advanceSummary: {
+      ...advanceTotals,
+      recentAdvances,
+    },
   };
 
-  return { summary, costs: allCosts };
+  return { summary, costs: allCosts, advances: allAdvances };
 }
 
 const SUPPORTED_IMAGE_EXTENSIONS: Record<string, 'png' | 'jpeg'> = {
@@ -206,6 +283,11 @@ const statusLabelMap: Record<CostStatus, string> = {
   [CostStatus.PAID]: 'Đã thanh toán',
   [CostStatus.PENDING]: 'Chờ thanh toán',
   [CostStatus.CANCELLED]: 'Đã hủy',
+};
+
+const paymentStatusLabelMap: Record<PaymentStatus, string> = {
+  [PaymentStatus.PAID]: 'Đã giải ngân',
+  [PaymentStatus.PLANNED]: 'Đang kế hoạch',
 };
 
 const currencyFormat = '#,##0" ₫"';
@@ -440,7 +522,7 @@ export const dashboardService = {
    * Xuất báo cáo chi tiết dưới dạng Excel (.xlsx) kèm ảnh hóa đơn
    */
   async generateReportExcel(): Promise<{ filename: string; buffer: Buffer }> {
-    const { summary, costs } = await buildReportData();
+    const { summary, costs, advances } = await buildReportData();
 
     const workbook = new ExcelJS.Workbook();
     workbook.created = new Date();
@@ -542,6 +624,31 @@ export const dashboardService = {
       row.getCell(2).numFmt = currencyFormat;
     });
 
+    overviewSheet.addRow([]);
+    const advanceHeader = overviewSheet.addRow(['Thống kê tạm ứng', 'Giá trị / Số lượng']);
+    advanceHeader.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FF1F2937' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+        bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+      };
+    });
+    const advanceRows: Array<[string, number, 'currency' | 'count']> = [
+      ['Tổng giá trị tạm ứng', summary.advanceSummary.totalAmount, 'currency'],
+      ['Đã giải ngân', summary.advanceSummary.paidAmount, 'currency'],
+      ['Đang kế hoạch', summary.advanceSummary.plannedAmount, 'currency'],
+      ['Số phiếu tạm ứng', summary.advanceSummary.totalCount, 'count'],
+      ['Phiếu đã giải ngân', summary.advanceSummary.paidCount, 'count'],
+      ['Phiếu đang kế hoạch', summary.advanceSummary.plannedCount, 'count'],
+    ];
+    advanceRows.forEach(([label, value, type]) => {
+      const row = overviewSheet.addRow([label, value]);
+      if (type === 'currency') {
+        row.getCell(2).numFmt = currencyFormat;
+      }
+    });
+
     overviewSheet.columns = [
       { key: 'label', width: 32 },
       { key: 'value', width: 28 },
@@ -620,6 +727,85 @@ export const dashboardService = {
     });
 
     detailSheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return;
+      row.border = {
+        bottom: { style: 'hair', color: { argb: 'FFD1D5DB' } },
+      };
+    });
+
+    /**
+     * Sheet: Chi tiết tạm ứng
+     */
+    const advanceSheet = workbook.addWorksheet('Chi tiết tạm ứng', {
+      views: [{ state: 'frozen', ySplit: 1 }],
+    });
+    advanceSheet.columns = [
+      { header: 'STT', key: 'index', width: 6 },
+      { header: 'Tên phiếu', key: 'ticket', width: 32 },
+      { header: 'Hạng mục', key: 'category', width: 24 },
+      { header: 'Số tiền', key: 'amount', width: 18 },
+      { header: 'Ngày thanh toán', key: 'paymentDate', width: 18 },
+      { header: 'Đợt', key: 'phase', width: 14 },
+      { header: 'Trạng thái', key: 'status', width: 18 },
+      { header: 'Mô tả', key: 'description', width: 40 },
+      { header: 'Ảnh hóa đơn', key: 'bill', width: 25 },
+    ];
+    advanceSheet.getRow(1).eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF047857' } };
+    });
+
+    const advanceBillColumnIndex = 9;
+
+    advances.forEach((advance, index) => {
+      const amount = Number(advance.amount) || 0;
+      const paymentDate = advance.paymentDate ? new Date(advance.paymentDate) : undefined;
+      const row = advanceSheet.addRow({
+        index: index + 1,
+        ticket: advance.ticketName,
+        category: advance.category?.name || 'Không xác định',
+        amount,
+        paymentDate,
+        phase: advance.phase,
+        status: paymentStatusLabelMap[advance.status as PaymentStatus] || advance.status,
+        description: advance.description || '',
+        bill: advance.billImageUrl ? 'Đính kèm' : 'Không có',
+      });
+
+      row.getCell(4).numFmt = currencyFormat;
+      if (paymentDate) {
+        row.getCell(5).numFmt = dateFormat;
+      }
+      row.getCell(2).alignment = { vertical: 'top', wrapText: true };
+      row.getCell(8).alignment = { vertical: 'top', wrapText: true };
+      row.getCell(advanceBillColumnIndex).alignment = { horizontal: 'center', vertical: 'middle' };
+
+      if (advance.billImageUrl) {
+        const billInfo = resolveBillImage(advance.billImageUrl);
+        if (billInfo?.type === 'file') {
+          const imageId = workbook.addImage({
+            filename: billInfo.absolutePath,
+            extension: billInfo.extension,
+          });
+          const rowNumber = row.number;
+          advanceSheet.addImage(imageId, {
+            tl: { col: advanceBillColumnIndex - 1 + 0.1, row: rowNumber - 1 + 0.1 },
+            ext: { width: 120, height: 80 },
+          });
+          row.height = Math.max(row.height || 18, 80);
+          row.getCell(advanceBillColumnIndex).value = '';
+        } else if (billInfo?.type === 'external') {
+          row.getCell(advanceBillColumnIndex).value = {
+            text: 'Xem ảnh',
+            hyperlink: billInfo.url,
+          };
+          row.getCell(advanceBillColumnIndex).font = { color: { argb: 'FF2563EB' }, underline: true };
+        }
+      }
+    });
+
+    advanceSheet.eachRow((row, rowNumber) => {
       if (rowNumber === 1) return;
       row.border = {
         bottom: { style: 'hair', color: { argb: 'FFD1D5DB' } },
