@@ -97,6 +97,52 @@ const authService = {
       localStorage.removeItem('user');
     }
   },
+
+  async sendForgotPasswordOTP(email: string): Promise<ApiResponse<SendOTPResponse>> {
+    try {
+      console.log('📧 Sending forgot password OTP to:', email);
+      const response = await apiClient.post<ApiResponse<SendOTPResponse>>('/auth/send-forgot-password-otp', { email });
+      console.log('✅ Forgot password OTP sent successfully:', response);
+      return response;
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse<any>>;
+      console.error('❌ Send forgot password OTP failed:', {
+        status: axiosError.response?.status,
+        data: axiosError.response?.data,
+        message: axiosError.message,
+      });
+      const errorMessage = 
+        axiosError.response?.data?.message || 
+        axiosError.message ||
+        'Không thể gửi mã OTP. Vui lòng thử lại.';
+      throw new Error(errorMessage);
+    }
+  },
+
+  async resetPassword(email: string, newPassword: string, otpCode: string): Promise<ApiResponse<void>> {
+    try {
+      console.log('🔐 Attempting password reset for:', email);
+      const response = await apiClient.post<ApiResponse<void>>('/auth/reset-password', {
+        email,
+        newPassword,
+        otpCode,
+      });
+      console.log('✅ Password reset successful:', response);
+      return response;
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse<any>>;
+      console.error('❌ Password reset failed:', {
+        status: axiosError.response?.status,
+        data: axiosError.response?.data,
+        message: axiosError.message,
+      });
+      const errorMessage = 
+        axiosError.response?.data?.message || 
+        axiosError.message ||
+        'Đặt lại mật khẩu thất bại. Vui lòng thử lại.';
+      throw new Error(errorMessage);
+    }
+  },
 };
 
 export default authService;

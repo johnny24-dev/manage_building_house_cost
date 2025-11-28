@@ -427,72 +427,65 @@ export const dashboardService = {
       };
     });
 
-    // 12. Tính tiến độ xây dựng dựa trên categories
-    const typeToPhaseName: { [key in CostCategoryType]: string } = {
-      [CostCategoryType.PHAN_THO]: 'Phần thô',
-      [CostCategoryType.HOAN_THIEN]: 'Hoàn thiện',
-      [CostCategoryType.DIEN_NUOC]: 'Điện & Nước',
-      [CostCategoryType.NOI_THAT]: 'Nội thất',
-      [CostCategoryType.PHAP_LY]: 'Pháp lý',
-      [CostCategoryType.PHAT_SINH]: 'Phát sinh',
-    };
+    // 12. Tính tiến độ xây dựng dựa trên từng hạng mục (category)
+    const constructionProgress: ConstructionPhase[] = allCategories
+      .filter((cat) => (Number(cat.total) || 0) > 0) // Chỉ lấy các category có dự tính > 0
+      .map((category) => {
+        const categoryTotal = Number(category.total) || 0;
+        const categoryName = category.name;
 
-    const constructionProgress: ConstructionPhase[] = Object.values(CostCategoryType).map((type) => {
-      const categoriesOfType = allCategories.filter((cat) => cat.type === type);
-      const totalForType = categoriesOfType.reduce((sum, cat) => sum + (Number(cat.total) || 0), 0);
-      
-      if (totalForType === 0) {
+        // Tính tổng đã chi từ costs có status = paid
+        const spentForCategory = paidCosts
+          .filter((cost) => cost.categoryId === category.id)
+          .reduce((sum, cost) => sum + (Number(cost.amount) || 0), 0);
+
+        // Tính tổng tạm ứng đã thanh toán
+        const advanceForCategory = paidPayments
+          .filter((payment) => payment.categoryId === category.id)
+          .reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0);
+
+        // Tính phần trăm hoàn thành
+        const percentage = Math.min(
+          ((spentForCategory + advanceForCategory) / categoryTotal) * 100,
+          100
+        );
+
+        // Xác định status
+        let status: 'completed' | 'in-progress' | 'pending';
+        if (percentage >= 100) {
+          status = 'completed';
+        } else if (percentage > 0) {
+          status = 'in-progress';
+        } else {
+          status = 'pending';
+        }
+
         return {
-          name: typeToPhaseName[type],
-          percentage: 0,
-          status: 'pending' as const,
+          name: categoryName,
+          percentage: Math.round(percentage),
+          status,
         };
-      }
+      })
+      .sort((a, b) => {
+        // Sắp xếp: in-progress trước, sau đó pending, cuối cùng completed
+        const statusOrder = { 'in-progress': 0, 'pending': 1, 'completed': 2 };
+        return statusOrder[a.status] - statusOrder[b.status];
+      });
 
-      const spentForType = paidCosts
-        .filter((cost) => {
-          const cat = allCategories.find((c) => c.id === cost.categoryId);
-          return cat?.type === type;
-        })
-        .reduce((sum, cost) => sum + (Number(cost.amount) || 0), 0);
+    // 13. Tính tiến độ tổng thể (trung bình của tất cả các hạng mục)
+    const overallProgress =
+      constructionProgress.length > 0
+        ? Math.round(
+            constructionProgress.reduce((sum, phase) => sum + phase.percentage, 0) /
+              constructionProgress.length
+          )
+        : 0;
 
-      const advanceForType = paidPayments
-        .filter((payment) => {
-          const cat = allCategories.find((c) => c.id === payment.categoryId);
-          return cat?.type === type;
-        })
-        .reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0);
-
-      const percentage = Math.min(((spentForType + advanceForType) / totalForType) * 100, 100);
-      
-      let status: 'completed' | 'in-progress' | 'pending';
-      if (percentage >= 100) {
-        status = 'completed';
-      } else if (percentage > 0) {
-        status = 'in-progress';
-      } else {
-        status = 'pending';
-      }
-
-      return {
-        name: typeToPhaseName[type],
-        percentage: Math.round(percentage),
-        status,
-      };
-    });
-
-    // 13. Tính tiến độ tổng thể
-    const overallProgress = constructionProgress.length > 0
-      ? Math.round(
-          constructionProgress.reduce((sum, phase) => sum + phase.percentage, 0) /
-            constructionProgress.length
-        )
-      : 0;
-
-    // 14. Tìm giai đoạn hiện tại (giai đoạn đang in-progress đầu tiên hoặc pending đầu tiên)
-    const currentPhaseObj = constructionProgress.find((phase) => phase.status === 'in-progress') ||
+    // 14. Tìm giai đoạn hiện tại (hạng mục đang in-progress đầu tiên hoặc pending đầu tiên)
+    const currentPhaseObj =
+      constructionProgress.find((phase) => phase.status === 'in-progress') ||
       constructionProgress.find((phase) => phase.status === 'pending') ||
-      constructionProgress[constructionProgress.length - 1];
+      constructionProgress[0];
     const currentPhase = currentPhaseObj?.name || 'Chưa bắt đầu';
 
     return {

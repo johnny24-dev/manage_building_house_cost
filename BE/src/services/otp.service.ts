@@ -105,12 +105,15 @@ export const sendOTP = async (
   const getPurposeText = () => {
     if (purpose === 'register') return 'đăng ký tài khoản';
     if (purpose === 'change_password') return 'đổi mật khẩu';
+    if (purpose === 'forgot_password') return 'đặt lại mật khẩu';
     return 'xác thực';
   };
   const emailSubject = purpose === 'register' 
     ? 'Mã xác thực đăng ký tài khoản' 
     : purpose === 'change_password'
     ? 'Mã xác thực đổi mật khẩu'
+    : purpose === 'forgot_password'
+    ? 'Mã xác thực đặt lại mật khẩu'
     : 'Mã xác thực OTP';
 
   const emailHtml = `

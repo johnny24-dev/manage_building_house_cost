@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/auth.controller';
-import { loginValidation, registerValidation, sendOTPValidation, validate } from '../utils/validation';
+import { loginValidation, registerValidation, sendOTPValidation, resetPasswordValidation, validate } from '../utils/validation';
 
 const router = Router();
 
@@ -24,6 +24,20 @@ router.post('/register', registerValidation, validate, AuthController.register);
  * @access  Public
  */
 router.post('/login', loginValidation, validate, AuthController.login);
+
+/**
+ * @route   POST /api/auth/send-forgot-password-otp
+ * @desc    Gửi OTP để quên mật khẩu
+ * @access  Public
+ */
+router.post('/send-forgot-password-otp', sendOTPValidation, validate, AuthController.sendForgotPasswordOTP);
+
+/**
+ * @route   POST /api/auth/reset-password
+ * @desc    Đặt lại mật khẩu sau khi xác thực OTP
+ * @access  Public
+ */
+router.post('/reset-password', resetPasswordValidation, validate, AuthController.resetPassword);
 
 export default router;
 

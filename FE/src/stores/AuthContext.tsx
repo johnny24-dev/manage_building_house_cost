@@ -14,6 +14,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   sendRegisterOTP: (email: string) => Promise<{ expiresAt: string }>;
   register: (email: string, password: string, otpCode: string) => Promise<void>;
+  sendForgotPasswordOTP: (email: string) => Promise<{ expiresAt: string }>;
+  resetPassword: (email: string, newPassword: string, otpCode: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -102,6 +104,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const sendForgotPasswordOTP = async (email: string): Promise<{ expiresAt: string }> => {
+    try {
+      const response = await authService.sendForgotPasswordOTP(email);
+      if (response.success && response.data) {
+        return response.data;
+      } else {
+        throw new Error('Không thể gửi mã OTP. Phản hồi không hợp lệ.');
+      }
+    } catch (error: any) {
+      console.error('Send forgot password OTP error:', error);
+      throw error;
+    }
+  };
+
+  const resetPassword = async (email: string, newPassword: string, otpCode: string) => {
+    try {
+      await authService.resetPassword(email, newPassword, otpCode);
+    } catch (error: any) {
+      console.error('Reset password error:', error);
+      throw error;
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -123,6 +148,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         sendRegisterOTP,
         register,
+        sendForgotPasswordOTP,
+        resetPassword,
         logout,
       }}
     >

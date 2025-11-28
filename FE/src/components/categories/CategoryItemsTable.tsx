@@ -5,6 +5,7 @@ import { CategoryItem } from '@/services/category.service';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
+import CurrencyInput from '@/components/ui/CurrencyInput';
 import { Plus, Edit2, Trash2, FileText, Save, X, Loader2 } from 'lucide-react';
 import useDebounce from '@/hooks/useDebounce';
 
@@ -302,16 +303,15 @@ export default function CategoryItemsTable({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {isEditing ? (
-                          <div className="relative">
-                            <input
-                              type="number"
-                              step="1000"
-                              value={editingData.unitPrice || ''}
-                              onChange={(e) => handleUnitPriceChange(item.id, e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          <div className="relative w-40">
+                            <CurrencyInput
+                              value={editingData.unitPrice?.toString() || ''}
+                              onChange={(value) => handleUnitPriceChange(item.id, value)}
+                              placeholder="Đơn giá"
+                              className="text-sm"
                             />
                             {isSavingItem && (
-                              <Loader2 className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 animate-spin text-blue-600" />
+                              <Loader2 className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 animate-spin text-blue-600 pointer-events-none" />
                             )}
                           </div>
                         ) : (
@@ -426,12 +426,11 @@ export default function CategoryItemsTable({
               onChange={(e) => setNewItem({ ...newItem, quantity: e.target.value })}
               required
             />
-            <Input
+            <CurrencyInput
               label="Đơn giá (VNĐ)"
-              type="number"
-              step="1000"
               value={newItem.unitPrice}
-              onChange={(e) => setNewItem({ ...newItem, unitPrice: e.target.value })}
+              onChange={(value) => setNewItem({ ...newItem, unitPrice: value })}
+              placeholder="Nhập đơn giá"
               required
             />
           </div>

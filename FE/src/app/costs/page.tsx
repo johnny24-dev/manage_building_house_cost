@@ -6,6 +6,7 @@ import DataTable from '@/components/ui/DataTable';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
+import CurrencyInput from '@/components/ui/CurrencyInput';
 import Tooltip from '@/components/ui/Tooltip';
 import { useAuth } from '@/stores/AuthContext';
 import {
@@ -1022,11 +1023,10 @@ export default function CostsPage() {
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input
+                  <CurrencyInput
                     label="Số tiền (VNĐ)"
-                    type="number"
                     value={formData.amount}
-                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                    onChange={(value) => setFormData({ ...formData, amount: value })}
                     placeholder="Nhập số tiền"
                     required
                   />

@@ -6,6 +6,7 @@ import CategoryGroupList from '@/components/categories/CategoryGroupList';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
+import CurrencyInput from '@/components/ui/CurrencyInput';
 import Card from '@/components/ui/Card';
 import Tooltip from '@/components/ui/Tooltip';
 import { Plus, FolderTree, Loader2, DollarSign, TrendingUp, TrendingDown, CreditCard } from 'lucide-react';
@@ -498,12 +499,10 @@ export default function CategoriesPage() {
               placeholder="Nhập tên hạng mục chi phí"
               required
             />
-            <Input
+            <CurrencyInput
               label="Dự tính chi phí (VNĐ)"
-              type="number"
-              step="1000"
               value={formData.total}
-              onChange={(e) => setFormData({ ...formData, total: e.target.value })}
+              onChange={(value) => setFormData({ ...formData, total: value })}
               placeholder="Nhập số tiền dự tính"
             />
             <div>

@@ -2,6 +2,7 @@
 
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import Input from '@/components/ui/Input';
+import CurrencyInput from '@/components/ui/CurrencyInput';
 import Button from '@/components/ui/Button';
 import { CategoryGroup } from '@/services/category.service';
 import CameraCaptureModal from '@/components/camera/CameraCaptureModal';
@@ -244,16 +245,15 @@ export default function AdvanceForm({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
+            <CurrencyInput
               label="Số tiền (VNĐ)"
-              type="number"
-              step="1000"
               value={formData.amount}
-              onChange={(e) => {
-                setFormData({ ...formData, amount: e.target.value });
+              onChange={(value) => {
+                setFormData({ ...formData, amount: value });
                 if (errors.amount) setErrors({ ...errors, amount: '' });
               }}
               error={errors.amount}
+              placeholder="Nhập số tiền"
               required
               disabled={isLoading}
             />

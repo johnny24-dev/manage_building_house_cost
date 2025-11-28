@@ -1,28 +1,67 @@
+version: '3.8'
+
 services:
   backend:
     build:
       context: ./BE
-    env_file:
-      - ./BE/.env
+      dockerfile: Dockerfile
+    container_name: cost_management_backend
     restart: unless-stopped
     ports:
       - '${BE_PORT:-9000}:${BE_PORT:-9000}'
     environment:
+      - NODE_ENV=production
       - PORT=${BE_PORT:-9000}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:${FE_PORT:-3000}}
+      - DB_PATH=/app/database/database.sqlite
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL:-admin@example.com}
+      - SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD:-admin123}
+      # Email configuration (optional)
+      - EMAIL_HOST=${EMAIL_HOST:-}
+      - EMAIL_PORT=${EMAIL_PORT:-587}
+      - EMAIL_USER=${EMAIL_USER:-}
+      - EMAIL_PASS=${EMAIL_PASS:-}
+      - EMAIL_FROM=${EMAIL_FROM:-}
     volumes:
       - ./BE/uploads:/app/uploads
-      - ./BE/database.sqlite:/app/database.sqlite
+      - ./BE/database:/app/database
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:' + (process.env.PORT || 9000) + '/', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - app-network
 
   frontend:
     build:
       context: ./FE
-    env_file:
-      - ./FE/.env
+      dockerfile: Dockerfile
+    container_name: cost_management_frontend
     restart: unless-stopped
     ports:
       - '${FE_PORT:-3000}:${FE_PORT:-3000}'
     environment:
+      - NODE_ENV=production
       - PORT=${FE_PORT:-3000}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:${BE_PORT:-9000}}
+      # Internal URL for server-side API routes to connect to backend
+      - BACKEND_INTERNAL_URL=http://backend:${BE_PORT:-9000}/api
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:' + (process.env.PORT || 3000) + '/', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
 

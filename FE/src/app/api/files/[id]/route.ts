@@ -23,16 +23,22 @@ export async function GET(
     }
 
     // Trong Docker, Next.js API route (server-side) cần kết nối đến backend service
-    // Sử dụng tên service 'backend' thay vì 'localhost' khi chạy trong Docker
-    // Ưu tiên biến môi trường BACKEND_INTERNAL_URL (cho server-side) hoặc NEXT_PUBLIC_API_URL
-    let backendBaseUrl = process.env.BACKEND_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000/api';
+    // Ưu tiên BACKEND_INTERNAL_URL (cho server-side trong Docker) 
+    // Nếu không có, sử dụng NEXT_PUBLIC_API_URL hoặc mặc định
+    let backendBaseUrl = process.env.BACKEND_INTERNAL_URL;
     
-    // Nếu đang chạy trong Docker và NEXT_PUBLIC_API_URL chứa localhost, thay bằng tên service
-    // Lấy port từ NEXT_PUBLIC_API_URL hoặc mặc định 9000
-    const backendPort = process.env.BE_PORT || '9000';
-    if (backendBaseUrl.includes('localhost')) {
-      // Thay localhost:port bằng backend:port khi chạy trong Docker
-      backendBaseUrl = backendBaseUrl.replace(/localhost:\d+/, `backend:${backendPort}`);
+    if (!backendBaseUrl) {
+      // Fallback: sử dụng NEXT_PUBLIC_API_URL hoặc mặc định
+      const publicApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000';
+      backendBaseUrl = publicApiUrl.endsWith('/api') 
+        ? publicApiUrl 
+        : `${publicApiUrl}/api`;
+      
+      // Nếu đang chạy trong Docker và URL chứa localhost, thay bằng service name
+      if (backendBaseUrl.includes('localhost')) {
+        const backendPort = process.env.BE_PORT || '9000';
+        backendBaseUrl = backendBaseUrl.replace(/localhost:\d+/, `backend:${backendPort}`);
+      }
     }
     
     // Đảm bảo URL có /api ở cuối

@@ -138,6 +138,62 @@ export const registerService = async (
 };
 
 /**
+ * Gửi OTP để quên mật khẩu
+ */
+export const sendForgotPasswordOTP = async (email: string): Promise<{ expiresAt: Date }> => {
+  const userRepository = getUserRepository();
+
+  // Kiểm tra email có tồn tại không
+  const user = await userRepository.findOne({
+    where: { email: email.toLowerCase() },
+  });
+
+  if (!user) {
+    // Không tiết lộ email có tồn tại hay không vì lý do bảo mật
+    // Vẫn trả về success để tránh email enumeration
+    throw new AppError(ErrorCode.EMAIL_NOT_FOUND, 'Email không tồn tại trong hệ thống');
+  }
+
+  // Gửi OTP với purpose 'forgot_password'
+  const { expiresAt } = await sendOTP(email, 'forgot_password');
+
+  return { expiresAt };
+};
+
+/**
+ * Đặt lại mật khẩu sau khi xác thực OTP
+ */
+export const resetPassword = async (
+  email: string,
+  newPassword: string,
+  otpCode: string
+): Promise<void> => {
+  const userRepository = getUserRepository();
+
+  // Tìm user
+  const user = await userRepository.findOne({
+    where: { email: email.toLowerCase() },
+  });
+
+  if (!user) {
+    throw new AppError(ErrorCode.EMAIL_NOT_FOUND, 'Email không tồn tại trong hệ thống');
+  }
+
+  // Verify OTP
+  await verifyOTP(email, otpCode, 'forgot_password');
+
+  // Hash mật khẩu mới
+  const saltRounds = 10;
+  const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+  // Cập nhật mật khẩu
+  user.password = hashedPassword;
+  await userRepository.save(user);
+
+  console.log(`✅ Password reset successful for ${email}`);
+};
+
+/**
  * Tạo super admin mặc định (chỉ chạy 1 lần khi init)
  */
 export const createDefaultSuperAdmin = async (): Promise<void> => {
