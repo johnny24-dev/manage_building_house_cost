@@ -189,17 +189,20 @@ export default function PDFViewer({ file, isOpen, onClose }: PDFViewerProps) {
     };
   }, [pdfUrl]);
 
-  // Prevent body scroll when viewer is open
+  // Prevent body scroll when viewer is open (but allow PDF scrolling)
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      // On mobile, don't prevent body scroll to allow PDF zoom/scroll
+      if (!isMobile) {
+        document.body.style.overflow = 'hidden';
+      }
     } else {
       document.body.style.overflow = '';
     }
     return () => {
       document.body.style.overflow = '';
     };
-  }, [isOpen]);
+  }, [isOpen, isMobile]);
 
   // Handle Escape key to close
   useEffect(() => {
@@ -230,6 +233,7 @@ export default function PDFViewer({ file, isOpen, onClose }: PDFViewerProps) {
   return createPortal(
     <div 
       className="fixed inset-0 z-[9999] bg-gray-900 flex flex-col animate-in fade-in duration-200"
+      style={{ touchAction: isMobile ? 'pan-x pan-y pinch-zoom' : 'none' }}
       onClick={(e) => {
         // Close when clicking outside (but not on the PDF content)
         if (e.target === e.currentTarget && !isLoading && !error) {
@@ -239,7 +243,11 @@ export default function PDFViewer({ file, isOpen, onClose }: PDFViewerProps) {
     >
       <div 
         ref={containerRef}
-        className="relative w-full h-full bg-gray-900 flex flex-col overflow-hidden"
+        className="relative w-full h-full bg-gray-900 flex flex-col"
+        style={{ 
+          touchAction: isMobile ? 'pan-x pan-y pinch-zoom' : 'none',
+          overflow: 'hidden',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Toolbar */}
@@ -356,7 +364,7 @@ export default function PDFViewer({ file, isOpen, onClose }: PDFViewerProps) {
         </div>
 
         {/* PDF Content Area - Full Screen */}
-        <div className="flex-1 relative bg-gray-900 overflow-hidden min-h-0 flex flex-col">
+        <div className="flex-1 relative bg-gray-900 min-h-0 flex flex-col" style={{ touchAction: 'pan-x pan-y pinch-zoom' }}>
           {/* Loading State */}
           {isLoading && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 z-20">
@@ -410,21 +418,39 @@ export default function PDFViewer({ file, isOpen, onClose }: PDFViewerProps) {
 
           {/* PDF Viewer - Full Screen */}
           {pdfUrl && !isLoading && !error && (
-            <div className="w-full h-full overflow-auto">
+            <div 
+              className={`w-full h-full ${isMobile ? 'overflow-visible' : 'overflow-auto'}`}
+              style={{ 
+                touchAction: isMobile ? 'pan-x pan-y pinch-zoom' : 'auto',
+                WebkitOverflowScrolling: isMobile ? 'touch' : 'auto',
+                overscrollBehavior: 'contain',
+                position: 'relative',
+              }}
+            >
               {isMobile ? (
-                // Mobile: Direct iframe full screen
+                // Mobile: Full screen iframe with proper zoom/scroll support
                 <iframe
                   ref={iframeRef}
-                  src={pdfUrl}
+                  src={`${pdfUrl}#toolbar=1&navpanes=0&scrollbar=1&zoom=page-width`}
                   className="w-full h-full border-0 bg-white"
                   title={file.name}
                   style={{ 
                     display: 'block',
                     width: '100%',
-                    minHeight: '100%',
+                    height: '100%',
                     touchAction: 'pan-x pan-y pinch-zoom',
+                    WebkitOverflowScrolling: 'touch',
+                    overflow: 'auto',
+                    overscrollBehavior: 'contain',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
                   }}
                   allow="fullscreen"
+                  scrolling="yes"
+                  allowFullScreen
                 />
               ) : (
                 // Desktop: Full width/height with zoom

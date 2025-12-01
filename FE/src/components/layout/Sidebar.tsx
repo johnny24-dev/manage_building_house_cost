@@ -9,8 +9,6 @@ import {
   BarChart3,
   Settings,
   Home,
-  Menu,
-  X,
   CreditCard,
   FileText,
 } from 'lucide-react';
@@ -54,19 +52,20 @@ const menuItems = [
   },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
+  const isMobileMenuOpen = isOpen;
 
   // Detect screen size
   useEffect(() => {
     const checkScreenSize = () => {
       setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024);
-      // Auto close mobile menu when resizing to desktop
-      if (window.innerWidth >= 1024) {
-        setIsMobileMenuOpen(false);
-      }
     };
 
     checkScreenSize();
@@ -78,8 +77,8 @@ export default function Sidebar() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      if (isMobileMenuOpen && !target.closest('aside') && !target.closest('button[aria-label="Toggle menu"]')) {
-        setIsMobileMenuOpen(false);
+      if (isMobileMenuOpen && !target.closest('aside') && !target.closest('button[aria-label="Toggle sidebar"]')) {
+        onClose?.();
       }
     };
 
@@ -95,28 +94,14 @@ export default function Sidebar() {
       document.removeEventListener('mousedown', handleClickOutside);
       document.body.style.overflow = '';
     };
-  }, [isMobileMenuOpen]);
+  }, [isMobileMenuOpen, onClose]);
 
   const handleLinkClick = () => {
-    setIsMobileMenuOpen(false);
+    onClose?.();
   };
 
   return (
     <>
-      {/* Mobile menu button */}
-      <button
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="lg:hidden fixed top-3 left-3 sm:top-4 sm:left-4 z-50 p-2.5 rounded-lg bg-white shadow-lg hover:bg-gray-50 transition-all duration-200 border border-gray-200"
-        aria-label="Toggle menu"
-        aria-expanded={isMobileMenuOpen}
-      >
-        {isMobileMenuOpen ? (
-          <X className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
-        ) : (
-          <Menu className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
-        )}
-      </button>
-
       {/* Sidebar */}
       <aside
         className={`
