@@ -25,6 +25,7 @@ import {
   Trash2,
   Sparkles,
   Edit2,
+  Download,
 } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import costService, { Cost } from '@/services/cost.service';
@@ -515,6 +516,51 @@ export default function CostsPage() {
     }));
   };
 
+  const handleExportCSV = () => {
+    if (costs.length === 0) {
+      showToast({
+        type: 'warning',
+        title: 'Không có dữ liệu để xuất',
+        description: 'Vui lòng thêm chi phí trước khi xuất báo cáo.',
+      });
+      return;
+    }
+
+    // CSV Headers
+    const headers = ['Mô tả', 'Hạng mục', 'Ngày', 'Số tiền (VND)', 'Trạng thái'];
+    
+    // CSV Rows
+    const rows = filteredCosts.map(cost => [
+      cost.description.replace(/"/g, '""'), // escape quotes
+      (cost.category?.name || 'N/A').replace(/"/g, '""'),
+      new Date(cost.date).toLocaleDateString('vi-VN'),
+      cost.amount.toString(),
+      statusLabels[cost.status] || cost.status,
+    ]);
+
+    // Create CSV content with UTF-8-BOM to ensure Excel opens Vietnamese correctly
+    const csvContent = 
+      '\uFEFF' + // UTF-8 BOM
+      [headers.join(','), ...rows.map(row => row.map(val => `"${val}"`).join(','))].join('\n');
+
+    // Download tệp
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `bao_cao_chi_phi_xay_dung_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showToast({
+      type: 'success',
+      title: 'Xuất báo cáo thành công',
+      description: `Đã xuất ${filteredCosts.length} khoản chi phí ra file Excel/CSV.`,
+    });
+  };
+
   const columns = [
     {
       header: 'Mô tả',
@@ -580,12 +626,23 @@ export default function CostsPage() {
               {isAdmin ? 'Theo dõi và quản lý các khoản chi phí' : 'Xem danh sách các khoản chi phí'}
             </p>
           </div>
-          {isAdmin && (
-            <Button onClick={handleAdd} className="w-full sm:w-auto">
-            <Plus className="w-4 h-4 mr-2 inline" />
-            Thêm chi phí
-          </Button>
-          )}
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <button
+              onClick={handleExportCSV}
+              type="button"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-800 rounded-xl text-sm font-semibold transition-colors border border-slate-200/50 cursor-pointer shadow-xs"
+              title="Xuất danh sách chi phí ra Excel/CSV"
+            >
+              <Download className="w-4 h-4" />
+              <span>Xuất Excel</span>
+            </button>
+            {isAdmin && (
+              <Button onClick={handleAdd} className="w-full sm:w-auto">
+                <Plus className="w-4 h-4 mr-2 inline" />
+                Thêm chi phí
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Summary Cards */}

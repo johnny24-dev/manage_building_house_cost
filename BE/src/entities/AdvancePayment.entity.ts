@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { CostCategory } from './CostCategory.entity';
 
@@ -23,6 +24,7 @@ export class AdvancePayment {
   ticketName: string; // Tên phiếu
 
   @Column({ type: 'varchar', name: 'category_id', nullable: true })
+  @Index()
   categoryId: string | null; // Hạng mục
 
   @Column({ type: 'datetime', name: 'payment_date' })

@@ -1,48 +1,43 @@
-# 🐳 Docker Setup Guide
+# 🐳 Hướng dẫn Cài đặt Docker & Deploy 1-Command
 
-Hướng dẫn chạy ứng dụng Quản lý Chi phí Xây nhà trên VPS mới chỉ với **1 lệnh duy nhất**.
+Tài liệu này hướng dẫn cách deploy toàn bộ hệ thống (Frontend + Backend + Database) lên VPS mới hoặc máy chủ khác chỉ với **1 lệnh duy nhất** thông qua script tự động.
 
-## 📋 Yêu cầu
+---
 
-- Docker Engine 20.10+
-- Docker Compose 2.0+
-- Tối thiểu 2GB RAM
-- Tối thiểu 5GB dung lượng ổ cứng
+## 📋 Yêu cầu Hệ thống tối thiểu
+* Hỗ trợ mọi Linux Distro (Ubuntu, Debian, CentOS, Rocky Linux, Alma Linux)
+* Tối thiểu 2GB RAM (khuyến nghị có thêm swap)
+* 5GB dung lượng ổ cứng trống
 
-## 🚀 Cài đặt nhanh (1 lệnh)
+---
 
-### Bước 1: Clone repository
+## 🚀 Cài đặt Nhanh (1 lệnh duy nhất)
+
+Bạn chỉ cần thực hiện 2 bước đơn giản trên VPS mới của mình:
+
+### Bước 1: Clone dự án và truy cập thư mục
 ```bash
 git clone <repository-url>
 cd mange_cost_building_house
 ```
 
-### Bước 2: Tạo file .env
+### Bước 2: Chạy Script Deploy Tự Động
+Chạy lệnh sau đây trên terminal:
 ```bash
-cp .env.example .env
+bash start.sh
 ```
 
-### Bước 3: Chỉnh sửa .env (tùy chọn)
-Mở file `.env` và cập nhật các giá trị nếu cần:
-- `FE_PORT`: Port cho frontend (mặc định: 3000)
-- `BE_PORT`: Port cho backend (mặc định: 9000)
-- `JWT_SECRET`: Secret key cho JWT (BẮT BUỘC thay đổi trong production)
-- `SUPER_ADMIN_EMAIL`: Email admin mặc định
-- `SUPER_ADMIN_PASSWORD`: Mật khẩu admin mặc định
-- Email config: Nếu muốn sử dụng tính năng OTP qua email
+**Điều kỳ diệu gì sẽ xảy ra?** Script `start.sh` được tích hợp công nghệ deploy tự động sẽ thực hiện toàn bộ:
+1. **Kiểm tra & Cài đặt Docker:** Tự động phát hiện và cài đặt Docker chính thức nếu VPS chưa có.
+2. **Kiểm tra & Cài đặt Docker Compose:** Tự động cài đặt Docker Compose Plugin V2 hoặc Standalone tùy hệ điều hành.
+3. **Cấu hình biến môi trường:** Tự động tạo tệp cấu hình `.env` từ `.env.example`, đồng thời tự động sinh mã khóa bí mật `JWT_SECRET` ngẫu nhiên bảo mật cao.
+4. **Tạo thư mục và phân quyền:** Tạo thư mục lưu database SQLite và ảnh hóa đơn upload, áp dụng phân quyền an toàn.
+5. **Dựng và Biên dịch ứng dụng:** Khởi chạy `docker compose up -d --build` để build image Docker tối ưu hóa dung lượng cho môi trường production.
+6. **Healthcheck:** Tự động kiểm tra trạng thái sức khỏe của Backend cho đến khi hoạt động ổn định và in báo cáo kết quả đẹp mắt trên terminal.
 
-### Bước 4: Chạy ứng dụng
-```bash
-docker-compose up -d
-```
+---
 
-**Xong!** Ứng dụng sẽ tự động:
-- Build images cho frontend và backend
-- Tạo database tự động
-- Khởi tạo super admin
-- Chạy cả 2 services
-
-## 🌐 Truy cập ứng dụng
+## 🌐 Đường dẫn Truy cập Mặc định
 
 - **Frontend**: http://localhost:3000 (hoặc port bạn đã cấu hình)
 - **Backend API**: http://localhost:9000 (hoặc port bạn đã cấu hình)

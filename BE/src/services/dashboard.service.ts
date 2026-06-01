@@ -133,20 +133,20 @@ async function buildReportData(): Promise<{
   const totalTransactions = allCosts.length;
 
   // 4. Tính chi phí trung bình/tháng
-  const costByMonthMap = new Map<string, number>();
+  const costByMonthMap = new Map<string, { total: number; count: number }>();
   allCosts.forEach((cost) => {
     const month = new Date(cost.date).toISOString().slice(0, 7); // YYYY-MM
-    const current = costByMonthMap.get(month) || 0;
-    costByMonthMap.set(month, current + (Number(cost.amount) || 0));
+    const current = costByMonthMap.get(month) || { total: 0, count: 0 };
+    current.total += Number(cost.amount) || 0;
+    current.count += 1;
+    costByMonthMap.set(month, current);
   });
 
   const costByMonth: CostByMonth[] = Array.from(costByMonthMap.entries())
-    .map(([month, total]) => ({
+    .map(([month, data]) => ({
       month,
-      total,
-      count: allCosts.filter(
-        (cost) => new Date(cost.date).toISOString().slice(0, 7) === month
-      ).length,
+      total: data.total,
+      count: data.count,
     }))
     .sort((a, b) => a.month.localeCompare(b.month));
 
@@ -345,15 +345,13 @@ export const dashboardService = {
     // 2. Lấy tất cả costs với status = paid để tính tổng đã chi
     const paidCosts = await costRepository.find({
       where: { status: CostStatus.PAID },
-      relations: ['category'],
-      select: ['id', 'amount', 'categoryId', 'category'],
+      select: ['id', 'amount', 'categoryId'],
     });
 
     // 3. Lấy tất cả advance payments với status = paid
     const paidPayments = await advancePaymentRepository.find({
       where: { status: PaymentStatus.PAID },
-      relations: ['category'],
-      select: ['id', 'amount', 'categoryId', 'category'],
+      select: ['id', 'amount', 'categoryId'],
     });
 
     // 4. Tính tổng chi phí dự tính (sum tất cả total trong cost_categories)

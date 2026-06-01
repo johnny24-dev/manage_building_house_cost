@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { CostCategory } from './CostCategory.entity';
 
@@ -21,6 +22,7 @@ export class Cost {
   id: string;
 
   @Column({ type: 'varchar', name: 'category_id' })
+  @Index()
   categoryId: string;
 
   @Column({ type: 'text' })

@@ -66,8 +66,9 @@ export const notificationStream = {
 
   broadcast(notification: Notification, recipientUserIds: string[]) {
     const payload = `data: ${JSON.stringify(formatNotificationPayload(notification))}\n\n`;
+    const recipientSet = new Set(recipientUserIds);
     clients.forEach((client) => {
-      if (recipientUserIds.includes(client.userId)) {
+      if (recipientSet.has(client.userId)) {
         client.res.write(payload);
       }
     });

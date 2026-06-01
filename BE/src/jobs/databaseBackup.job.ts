@@ -1,6 +1,7 @@
 import fs from 'fs';
 import fsPromises from 'fs/promises';
 import path from 'path';
+import { AppDataSource } from '../config/database';
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const DB_PATH =
@@ -59,8 +60,15 @@ const performBackup = async () => {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const backupFile = path.join(BACKUP_DIR, `database-${timestamp}.sqlite`);
 
-    await fsPromises.copyFile(DB_PATH, backupFile);
-    console.log(`💾 Đã backup database: ${backupFile}`);
+    // Sử dụng SQLite VACUUM INTO để backup an toàn, không bị lỗi database corruption
+    const queryRunner = AppDataSource.createQueryRunner();
+    try {
+      await queryRunner.connect();
+      await queryRunner.query('VACUUM INTO ?', [backupFile]);
+      console.log(`💾 Đã backup database an toàn qua VACUUM INTO: ${backupFile}`);
+    } finally {
+      await queryRunner.release();
+    }
 
     await cleanupOldBackups();
   } catch (error) {

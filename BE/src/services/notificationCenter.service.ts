@@ -3,6 +3,7 @@ import { Notification } from '../entities/Notification.entity';
 import { NotificationUser } from '../entities/NotificationUser.entity';
 import { User } from '../entities/User.entity';
 import { notificationStream } from './notificationStream.service';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface CreateNotificationPayload {
   title: string;
@@ -43,13 +44,18 @@ export const notificationCenterService = {
     });
 
     if (users.length > 0) {
-      const notificationUsers = users.map((user) =>
-        notificationUserRepository.create({
-          notificationId: savedNotification.id,
-          userId: user.id,
-        })
-      );
-      await notificationUserRepository.save(notificationUsers);
+      const values = users.map((user) => ({
+        id: uuidv4(),
+        notificationId: savedNotification.id,
+        userId: user.id,
+      }));
+      
+      await notificationUserRepository
+        .createQueryBuilder()
+        .insert()
+        .values(values)
+        .execute();
+
       notificationStream.broadcast(savedNotification, users.map((user) => user.id));
     }
 

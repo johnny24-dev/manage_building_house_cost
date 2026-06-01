@@ -23,9 +23,9 @@ export async function GET(
     }
 
     // Trong Docker, Next.js API route (server-side) cần kết nối đến backend service
-    // Ưu tiên BACKEND_INTERNAL_URL (cho server-side trong Docker) 
-    // Nếu không có, sử dụng NEXT_PUBLIC_API_URL hoặc mặc định
-    let backendBaseUrl = process.env.BACKEND_INTERNAL_URL;
+    // Chỉ sử dụng BACKEND_INTERNAL_URL (cho server-side trong Docker) nếu thực sự đang chạy trong Docker
+    const isDocker = require('fs').existsSync('/.dockerenv');
+    let backendBaseUrl = isDocker ? process.env.BACKEND_INTERNAL_URL : undefined;
     
     if (!backendBaseUrl) {
       // Fallback: sử dụng NEXT_PUBLIC_API_URL hoặc mặc định
@@ -34,8 +34,8 @@ export async function GET(
         ? publicApiUrl 
         : `${publicApiUrl}/api`;
       
-      // Nếu đang chạy trong Docker và URL chứa localhost, thay bằng service name
-      if (backendBaseUrl.includes('localhost')) {
+      // Chỉ thay bằng service name nếu thực sự đang chạy trong Docker và URL chứa localhost
+      if (isDocker && backendBaseUrl.includes('localhost')) {
         const backendPort = process.env.BE_PORT || '9000';
         backendBaseUrl = backendBaseUrl.replace(/localhost:\d+/, `backend:${backendPort}`);
       }

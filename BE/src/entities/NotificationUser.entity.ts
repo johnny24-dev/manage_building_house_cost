@@ -5,6 +5,7 @@ import {
   ManyToOne,
   JoinColumn,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
 import { Notification } from './Notification.entity';
 import { User } from './User.entity';
@@ -21,6 +22,7 @@ export class NotificationUser {
   notification: Notification;
 
   @Column({ name: 'notification_id', type: 'uuid' })
+  @Index()
   notificationId: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
@@ -28,6 +30,7 @@ export class NotificationUser {
   user: User;
 
   @Column({ name: 'user_id', type: 'uuid' })
+  @Index()
   userId: string;
 
   @Column({ name: 'is_read', type: 'boolean', default: false })

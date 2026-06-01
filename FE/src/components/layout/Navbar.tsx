@@ -221,23 +221,24 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
               )}
             </div>
 
-            {/* Search Results Dropdown */}
+            {/* Search Results Dropdown - Premium Glassmorphism */}
             {showSearchResults && searchResults && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border-2 border-gray-200 z-[100] max-h-[500px] overflow-y-auto">
+              <div className="absolute top-full left-0 right-0 mt-3.5 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/50 z-[100] max-h-[480px] overflow-y-auto animate-in fade-in slide-in-from-top-4 duration-300 ease-out custom-scrollbar">
                 {searchResults.costs.length === 0 &&
                 searchResults.categories.length === 0 &&
                 searchResults.advancePayments.length === 0 &&
                 searchResults.files.length === 0 ? (
-                  <div className="px-4 py-6 text-center text-sm text-gray-500">
-                    <p>Không tìm thấy kết quả nào</p>
+                  <div className="px-5 py-8 text-center text-sm text-gray-500">
+                    <p className="font-semibold text-gray-700">Không tìm thấy kết quả nào</p>
+                    <p className="text-xs text-gray-400 mt-1">Thử nhập từ khóa khác xem sao</p>
                   </div>
                 ) : (
-                  <div className="py-2">
+                  <div className="py-2.5">
                     {/* Costs */}
                     {searchResults.costs.length > 0 && (
-                      <div className="mb-2">
-                        <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
-                          <p className="text-xs font-semibold text-gray-600 uppercase">Chi phí</p>
+                      <div className="mb-3.5">
+                        <div className="px-5 py-1.5 bg-slate-50/80 border-y border-slate-100 flex items-center">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Chi phí</p>
                         </div>
                         {searchResults.costs.map((item: any) => {
                           const Icon = getTypeIcon(item.type);
@@ -249,14 +250,18 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
                                 setShowSearchResults(false);
                                 setSearchQuery('');
                               }}
-                              className="flex items-start gap-3 px-4 py-3 hover:bg-blue-50 transition-colors"
+                              className="flex items-start gap-3.5 px-5 py-3 hover:bg-blue-50/50 hover:border-l-4 hover:border-blue-500 transition-all duration-200"
                             >
-                              <Icon className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
+                              <div className="p-1.5 bg-blue-50 rounded-lg text-blue-600 shrink-0 mt-0.5">
+                                <Icon className="w-4 h-4 stroke-[2]" />
+                              </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-gray-900 break-words">{item.title}</p>
-                                <p className="text-xs text-gray-600 mt-0.5 break-words">{item.description}</p>
+                                <p className="text-sm font-bold text-gray-900 break-words leading-tight">{item.title}</p>
+                                <p className="text-xs font-semibold text-slate-500 mt-1 break-words">{item.description}</p>
                                 {item.category && (
-                                  <p className="text-xs text-gray-400 mt-1">Hạng mục: {item.category}</p>
+                                  <span className="inline-block px-1.5 py-0.5 bg-blue-100/60 text-blue-800 text-[10px] font-bold rounded mt-1.5">
+                                    {item.category}
+                                  </span>
                                 )}
                               </div>
                             </Link>
@@ -267,9 +272,9 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
 
                     {/* Categories */}
                     {searchResults.categories.length > 0 && (
-                      <div className="mb-2">
-                        <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
-                          <p className="text-xs font-semibold text-gray-600 uppercase">Hạng mục</p>
+                      <div className="mb-3.5">
+                        <div className="px-5 py-1.5 bg-slate-50/80 border-y border-slate-100 flex items-center">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Hạng mục</p>
                         </div>
                         {searchResults.categories.map((item: any) => {
                           const Icon = getTypeIcon(item.type);
@@ -281,12 +286,14 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
                                 setShowSearchResults(false);
                                 setSearchQuery('');
                               }}
-                              className="flex items-start gap-3 px-4 py-3 hover:bg-green-50 transition-colors"
+                              className="flex items-start gap-3.5 px-5 py-3 hover:bg-green-50/50 hover:border-l-4 hover:border-green-500 transition-all duration-200"
                             >
-                              <Icon className="w-5 h-5 text-green-600 mt-0.5 shrink-0" />
+                              <div className="p-1.5 bg-green-50 rounded-lg text-green-600 shrink-0 mt-0.5">
+                                <Icon className="w-4 h-4 stroke-[2]" />
+                              </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-gray-900 break-words">{item.title}</p>
-                                <p className="text-xs text-gray-600 mt-0.5 break-words">{item.description}</p>
+                                <p className="text-sm font-bold text-gray-900 break-words leading-tight">{item.title}</p>
+                                <p className="text-xs font-semibold text-slate-500 mt-1 break-words">{item.description}</p>
                               </div>
                             </Link>
                           );
@@ -296,9 +303,9 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
 
                     {/* Advance Payments */}
                     {searchResults.advancePayments.length > 0 && (
-                      <div className="mb-2">
-                        <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
-                          <p className="text-xs font-semibold text-gray-600 uppercase">Tạm ứng</p>
+                      <div className="mb-3.5">
+                        <div className="px-5 py-1.5 bg-slate-50/80 border-y border-slate-100 flex items-center">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Tạm ứng</p>
                         </div>
                         {searchResults.advancePayments.map((item: any) => {
                           const Icon = getTypeIcon(item.type);
@@ -310,12 +317,14 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
                                 setShowSearchResults(false);
                                 setSearchQuery('');
                               }}
-                              className="flex items-start gap-3 px-4 py-3 hover:bg-purple-50 transition-colors"
+                              className="flex items-start gap-3.5 px-5 py-3 hover:bg-purple-50/50 hover:border-l-4 hover:border-purple-500 transition-all duration-200"
                             >
-                              <Icon className="w-5 h-5 text-purple-600 mt-0.5 shrink-0" />
+                              <div className="p-1.5 bg-purple-50 rounded-lg text-purple-600 shrink-0 mt-0.5">
+                                <Icon className="w-4 h-4 stroke-[2]" />
+                              </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-gray-900 break-words">{item.title}</p>
-                                <p className="text-xs text-gray-600 mt-0.5 break-words">{item.description}</p>
+                                <p className="text-sm font-bold text-gray-900 break-words leading-tight">{item.title}</p>
+                                <p className="text-xs font-semibold text-slate-500 mt-1 break-words">{item.description}</p>
                               </div>
                             </Link>
                           );
@@ -325,9 +334,9 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
 
                     {/* Files */}
                     {searchResults.files.length > 0 && (
-                      <div className="mb-2">
-                        <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
-                          <p className="text-xs font-semibold text-gray-600 uppercase">File thiết kế</p>
+                      <div className="mb-1">
+                        <div className="px-5 py-1.5 bg-slate-50/80 border-y border-slate-100 flex items-center">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">File thiết kế</p>
                         </div>
                         {searchResults.files.map((item: any) => {
                           const Icon = getTypeIcon(item.type);
@@ -339,12 +348,14 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
                                 setShowSearchResults(false);
                                 setSearchQuery('');
                               }}
-                              className="flex items-start gap-3 px-4 py-3 hover:bg-orange-50 transition-colors"
+                              className="flex items-start gap-3.5 px-5 py-3 hover:bg-orange-50/50 hover:border-l-4 hover:border-orange-500 transition-all duration-200"
                             >
-                              <Icon className="w-5 h-5 text-orange-600 mt-0.5 shrink-0" />
+                              <div className="p-1.5 bg-orange-50 rounded-lg text-orange-600 shrink-0 mt-0.5">
+                                <Icon className="w-4 h-4 stroke-[2]" />
+                              </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-gray-900 break-words">{item.title}</p>
-                                <p className="text-xs text-gray-600 mt-0.5 break-words">{item.description}</p>
+                                <p className="text-sm font-bold text-gray-900 break-words leading-tight">{item.title}</p>
+                                <p className="text-xs font-semibold text-slate-500 mt-1 break-words">{item.description}</p>
                               </div>
                             </Link>
                           );

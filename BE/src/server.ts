@@ -21,6 +21,7 @@ import advancePaymentRoutes from './routes/advancePayment.routes';
 import designFileRoutes from './routes/designFile.routes';
 import settingsRoutes from './routes/settings.routes';
 import notificationRoutes from './routes/notification.routes';
+import searchRoutes from './routes/search.routes';
 
 const app = express();
 const PORT = process.env.PORT || 9000;
@@ -31,18 +32,22 @@ const corsOptions = {
     // Allow requests with no origin (like mobile apps, curl, Postman)
     if (!origin) return callback(null, true);
     
+    // Clean up trailing slash from origin for consistent comparisons
+    const cleanOrigin = origin.replace(/\/$/, '');
+    
     const allowedOrigins = [
-      process.env.FRONTEND_URL || 'http://localhost:3000',
+      (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, ''),
       'http://localhost:3000',
       'http://frontend:3000', // Docker internal
     ];
     
-    // Check if origin is allowed
-    if (allowedOrigins.some(allowed => origin.startsWith(allowed))) {
+    // Check if origin is allowed (exact match or subdomain match if needed)
+    if (allowedOrigins.some(allowed => cleanOrigin === allowed || cleanOrigin.startsWith(allowed + '/'))) {
       callback(null, true);
     } else {
       // In production, be more strict
       if (process.env.NODE_ENV === 'production') {
+        console.error(`[CORS] Rejected origin: ${origin}. Allowed: ${allowedOrigins.join(', ')}`);
         callback(new Error('Not allowed by CORS'));
       } else {
         callback(null, true); // Allow in development
@@ -82,6 +87,7 @@ app.use('/api/advance-payments', advancePaymentRoutes);
 app.use('/api/designs', designFileRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/search', searchRoutes);
 
 // Serve static files từ thư mục uploads
 app.use('/uploads', express.static('uploads'));
