@@ -22,10 +22,18 @@ cd mange_cost_building_house
 ```
 
 ### Bước 2: Chạy Script Deploy Tự Động
-Chạy lệnh sau đây trên terminal:
-```bash
-bash start.sh
-```
+
+* **Trên Linux/macOS:**
+  Chạy lệnh sau đây trên terminal:
+  ```bash
+  bash start.sh
+  ```
+
+* **Trên Windows:**
+  Nhấp đúp chuột (Double-click) vào file `start.bat` hoặc chạy trong Command Prompt:
+  ```cmd
+  start.bat
+  ```
 
 **Điều kỳ diệu gì sẽ xảy ra?** Script `start.sh` được tích hợp công nghệ deploy tự động sẽ thực hiện toàn bộ:
 1. **Kiểm tra & Cài đặt Docker:** Tự động phát hiện và cài đặt Docker chính thức nếu VPS chưa có.
