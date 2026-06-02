@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import 'dotenv/config';
+import '../utils/envLoader';
 import { initializeDatabase } from '../config/database';
 
 /**

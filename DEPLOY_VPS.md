@@ -18,38 +18,39 @@ Nếu có submodule:
 git submodule update --init --recursive
 ```
 
-## 3. Cấu hình biến môi trường
-### Backend (`BE/.env`)
+## 3. Cấu hình biến môi trường (`.env` ở thư mục gốc)
+Hệ thống sử dụng một file `.env` duy nhất tại thư mục gốc của dự án. Hãy chỉnh sửa file này trước khi build:
+
 ```env
-NODE_ENV=production
-PORT=9000
+# Cấu hình cổng hiển thị ra bên ngoài (Port Exposure)
+FE_PORT=3000
+BE_PORT=9000
+
+# Địa chỉ Frontend và Backend truy cập công cộng (Public URL / Domain)
+# Khi trỏ domain, thay thế bằng domain thật của bạn:
 FRONTEND_URL=https://your-domain.com
-DB_PATH=/app/database.sqlite
+NEXT_PUBLIC_API_URL=https://your-domain.com/api
+
+# Khóa bảo mật JWT (Đã được sinh ngẫu nhiên)
 JWT_SECRET=your-secure-production-secret
-JWT_EXPIRES_IN=7d
-EMAIL_ENABLED=true
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_SECURE=false
-EMAIL_USER=you@example.com
-EMAIL_PASS=app-password
+
+# Tài khoản Quản trị tối cao mặc định (Super Admin)
 SUPER_ADMIN_EMAIL=admin@example.com
 SUPER_ADMIN_PASSWORD=ChangeMe123
-```
 
-### Frontend (`FE/.env`)
-```env
-NEXT_PUBLIC_API_URL=https://your-domain.com/api
-BACKEND_INTERNAL_URL=http://backend:9000/api
-NEXT_PUBLIC_ENV=production
-NEXT_PUBLIC_FRONTEND_URL=https://your-domain.com
+# Cấu hình dịch vụ gửi Email OTP (Tùy chọn)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=you@example.com
+EMAIL_PASS=app-password
+EMAIL_FROM=noreply@your-domain.com
 ```
 
 > **Lưu ý**  
-> - `FRONTEND_URL` dùng cho CORS và link trong email.  
-> - `NEXT_PUBLIC_API_URL` là URL mà trình duyệt truy cập.  
-> - `BACKEND_INTERNAL_URL` dùng cho các API phía server của Next.js (đi qua mạng Docker).  
-> - Thay chuỗi bí mật, mật khẩu admin, email theo môi trường thật.
+> - `FRONTEND_URL` dùng cho Backend cấu hình CORS và các đường link gửi qua email.  
+> - `NEXT_PUBLIC_API_URL` là URL API của Backend mà trình duyệt (client-side) sẽ truy cập trực tiếp.  
+> - Khi dùng Nginx/Reverse Proxy, trỏ domain chính tới cổng Frontend (`3000`) và đường dẫn `/api` tới cổng Backend (`9000`).
+> - Thay chuỗi bí mật `JWT_SECRET`, mật khẩu admin, email theo môi trường thật của bạn.
 
 ## 4. Kiểm tra Dockerfile & docker-compose
 Đã cấu hình sẵn:

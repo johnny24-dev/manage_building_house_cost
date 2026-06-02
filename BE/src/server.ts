@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import 'dotenv/config';
+import './utils/envLoader';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';

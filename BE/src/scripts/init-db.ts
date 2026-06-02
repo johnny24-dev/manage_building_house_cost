@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import 'dotenv/config';
+import '../utils/envLoader';
 import { AppDataSource } from '../config/database';
 import { createDefaultSuperAdmin } from '../services/auth.service';
 
