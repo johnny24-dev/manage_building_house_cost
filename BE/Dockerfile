@@ -3,7 +3,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Install build dependencies for native modules (like sqlite3)
-RUN apk add --no-cache python3 make g++ sqlite
+RUN apk add --no-cache python3 make g++ sqlite py3-setuptools
 
 # Copy package files
 COPY package*.json ./
@@ -24,7 +24,7 @@ ENV NODE_ENV=production
 ENV PORT=9000
 
 # Install system dependencies for better-sqlite3
-RUN apk add --no-cache python3 make g++ sqlite
+RUN apk add --no-cache python3 make g++ sqlite py3-setuptools
 
 # Copy package files
 COPY package*.json ./

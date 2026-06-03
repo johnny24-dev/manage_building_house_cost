@@ -10,7 +10,7 @@ RUN npm ci
 COPY . .
 
 # Accept build arguments and export them for Next.js build
-ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_API_URL=__NEXT_PUBLIC_API_URL_PLACEHOLDER__
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 # Build Next.js app
@@ -38,5 +38,6 @@ RUN npm ci --omit=dev --legacy-peer-deps
 EXPOSE 3000
 
 # Start Next.js using npx (which will find next in node_modules/.bin)
-CMD sh -c "npx next start -p ${PORT:-3000}"
+# Dynamically replace the API URL placeholder with the runtime env variable at startup
+CMD sh -c "API_URL=\${NEXT_PUBLIC_API_URL:-http://localhost:9000/api} && find .next -type f \\( -name '*.js' -o -name '*.html' \\) -exec sed -i \"s|__NEXT_PUBLIC_API_URL_PLACEHOLDER__|\${API_URL}|g\" {} + && npx next start -p \${PORT:-3000}"
 
