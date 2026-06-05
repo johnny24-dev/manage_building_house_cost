@@ -54,9 +54,9 @@ export default function Home() {
     try {
       const response = await dashboardService.getSummary();
       setSummary(response.data);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error loading dashboard:', err);
-      setError(err.message || 'Không thể tải dữ liệu tổng quan');
+      setError(err instanceof Error ? err.message : 'Không thể tải dữ liệu tổng quan');
     } finally {
       setIsLoading(false);
     }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import fs from 'fs';
 
 /**
  * API Route để proxy PDF file từ backend
@@ -24,7 +25,7 @@ export async function GET(
 
     // Trong Docker, Next.js API route (server-side) cần kết nối đến backend service
     // Chỉ sử dụng BACKEND_INTERNAL_URL (cho server-side trong Docker) nếu thực sự đang chạy trong Docker
-    const isDocker = require('fs').existsSync('/.dockerenv');
+    const isDocker = fs.existsSync('/.dockerenv');
     let backendBaseUrl = isDocker ? process.env.BACKEND_INTERNAL_URL : undefined;
     
     if (!backendBaseUrl) {
@@ -82,25 +83,26 @@ export async function GET(
         'X-Content-Type-Options': 'nosniff',
       },
     });
-  } catch (error: any) {
-    console.error('[PDF Proxy] Error proxying PDF:', error);
+  } catch (error) {
+    const err = error as Error & { cause?: { code?: string }; code?: string };
+    console.error('[PDF Proxy] Error proxying PDF:', err);
     console.error('[PDF Proxy] Error details:', {
-      message: error?.message,
-      cause: error?.cause,
-      code: error?.code,
-      stack: error?.stack,
+      message: err.message,
+      cause: err.cause,
+      code: err.code,
+      stack: err.stack,
     });
     
     // Trả về thông báo lỗi chi tiết hơn cho debugging
-    const errorMessage = error?.cause?.code === 'ECONNREFUSED' 
+    const errorMessage = err.cause?.code === 'ECONNREFUSED' 
       ? 'Không thể kết nối đến backend server. Vui lòng kiểm tra backend có đang chạy không.'
-      : error?.message || 'Internal server error';
+      : err.message || 'Internal server error';
     
     return NextResponse.json(
       { 
         error: 'Internal server error',
         message: errorMessage,
-        details: process.env.NODE_ENV === 'development' ? error?.message : undefined,
+        details: process.env.NODE_ENV === 'development' ? err.message : undefined,
       },
       { status: 500 }
     );

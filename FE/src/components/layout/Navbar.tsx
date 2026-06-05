@@ -9,6 +9,22 @@ import { API_URL } from '@/lib/env';
 import { useNotifications } from '@/stores/NotificationContext';
 import Link from 'next/link';
 
+interface SearchItem {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  href: string;
+  category?: string;
+}
+
+interface SearchResults {
+  costs: SearchItem[];
+  categories: SearchItem[];
+  advancePayments: SearchItem[];
+  files: SearchItem[];
+}
+
 interface NavbarProps {
   onToggleSidebar?: () => void;
 }
@@ -21,7 +37,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
   const [showSearch, setShowSearch] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any>(null);
+  const [searchResults, setSearchResults] = useState<SearchResults | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -240,7 +256,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
                         <div className="px-5 py-1.5 bg-slate-50/80 border-y border-slate-100 flex items-center">
                           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Chi phí</p>
                         </div>
-                        {searchResults.costs.map((item: any) => {
+                        {searchResults.costs.map((item: SearchItem) => {
                           const Icon = getTypeIcon(item.type);
                           return (
                             <Link
@@ -276,7 +292,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
                         <div className="px-5 py-1.5 bg-slate-50/80 border-y border-slate-100 flex items-center">
                           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Hạng mục</p>
                         </div>
-                        {searchResults.categories.map((item: any) => {
+                        {searchResults.categories.map((item: SearchItem) => {
                           const Icon = getTypeIcon(item.type);
                           return (
                             <Link
@@ -307,7 +323,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
                         <div className="px-5 py-1.5 bg-slate-50/80 border-y border-slate-100 flex items-center">
                           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Tạm ứng</p>
                         </div>
-                        {searchResults.advancePayments.map((item: any) => {
+                        {searchResults.advancePayments.map((item: SearchItem) => {
                           const Icon = getTypeIcon(item.type);
                           return (
                             <Link
@@ -338,7 +354,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
                         <div className="px-5 py-1.5 bg-slate-50/80 border-y border-slate-100 flex items-center">
                           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">File thiết kế</p>
                         </div>
-                        {searchResults.files.map((item: any) => {
+                        {searchResults.files.map((item: SearchItem) => {
                           const Icon = getTypeIcon(item.type);
                           return (
                             <Link

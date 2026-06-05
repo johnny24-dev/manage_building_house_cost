@@ -85,11 +85,11 @@ export default function SettingsPage() {
         notifyEmail: data.notifyEmail,
         notifyBudget: data.notifyBudget,
       });
-    } catch (error: any) {
+    } catch (error) {
         showToast({
           type: 'error',
           title: 'Không thể tải cài đặt',
-          description: error.message,
+          description: error instanceof Error ? error.message : 'Đã xảy ra lỗi',
         });
     } finally {
       setIsLoading(false);
@@ -114,11 +114,11 @@ export default function SettingsPage() {
             title: 'Đã cập nhật danh sách thành viên',
           });
         }
-      } catch (error: any) {
+      } catch (error) {
         showToast({
           type: 'error',
           title: 'Không thể tải danh sách người dùng',
-          description: error.message,
+          description: error instanceof Error ? error.message : 'Đã xảy ra lỗi',
         });
       } finally {
         setUsersLoading(false);
@@ -144,11 +144,11 @@ export default function SettingsPage() {
         type: 'success',
         title: 'Đã lưu thông tin cá nhân',
       });
-    } catch (error: any) {
+    } catch (error) {
       showToast({
         type: 'error',
         title: 'Không thể cập nhật thông tin',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Đã xảy ra lỗi',
       });
     } finally {
       setSavingProfile(false);
@@ -164,11 +164,11 @@ export default function SettingsPage() {
         type: 'success',
         title: 'Đã cập nhật cài đặt thông báo',
       });
-    } catch (error: any) {
+    } catch (error) {
       showToast({
         type: 'error',
         title: 'Không thể cập nhật thông báo',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Đã xảy ra lỗi',
       });
     } finally {
       setSavingNotifications(false);
@@ -210,11 +210,11 @@ export default function SettingsPage() {
         title: 'Đã gửi mã OTP',
         description: 'Vui lòng kiểm tra email và nhập mã OTP để hoàn tất đổi mật khẩu',
       });
-    } catch (error: any) {
+    } catch (error) {
       showToast({
         type: 'error',
         title: 'Không thể gửi mã OTP',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Đã xảy ra lỗi',
       });
     } finally {
       setSendingOtp(false);
@@ -230,11 +230,11 @@ export default function SettingsPage() {
         title: 'Đã gửi lại mã OTP',
         description: 'Vui lòng kiểm tra email',
       });
-    } catch (error: any) {
+    } catch (error) {
       showToast({
         type: 'error',
         title: 'Không thể gửi lại mã OTP',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Đã xảy ra lỗi',
       });
     } finally {
       setOtpLoading(false);
@@ -264,11 +264,11 @@ export default function SettingsPage() {
         type: 'success',
         title: 'Đổi mật khẩu thành công',
       });
-    } catch (error: any) {
+    } catch (error) {
       showToast({
         type: 'error',
         title: 'Không thể đổi mật khẩu',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Đã xảy ra lỗi',
       });
     } finally {
       setChangingPassword(false);
@@ -304,11 +304,11 @@ export default function SettingsPage() {
         type: 'success',
         title: 'Ảnh đại diện đã được cập nhật',
       });
-    } catch (error: any) {
+    } catch (error) {
       showToast({
         type: 'error',
         title: 'Không thể cập nhật ảnh đại diện',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Đã xảy ra lỗi',
       });
     } finally {
       setAvatarUploading(false);
@@ -338,11 +338,11 @@ export default function SettingsPage() {
         title: 'Cập nhật vai trò thành công',
         description: updatedUser?.fullName || updatedUser?.email,
       });
-    } catch (error: any) {
+    } catch (error) {
       showToast({
         type: 'error',
         title: 'Không thể cập nhật vai trò',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Đã xảy ra lỗi',
       });
     } finally {
       setUserAction(null);
@@ -369,11 +369,11 @@ export default function SettingsPage() {
         title: 'Đã xóa người dùng',
         description: email,
       });
-    } catch (error: any) {
+    } catch (error) {
       showToast({
         type: 'error',
         title: 'Không thể xóa người dùng',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Đã xảy ra lỗi',
       });
     } finally {
       setUserAction(null);

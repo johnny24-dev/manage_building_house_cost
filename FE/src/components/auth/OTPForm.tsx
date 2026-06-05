@@ -113,8 +113,8 @@ export default function OTPForm({
     setIsSubmitting(true);
     try {
       await onVerify(otpCode);
-    } catch (err: any) {
-      setError(err.message || 'Mã OTP không hợp lệ. Vui lòng thử lại.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Mã OTP không hợp lệ. Vui lòng thử lại.');
       // Clear OTP on error
       setOtp(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
@@ -130,8 +130,8 @@ export default function OTPForm({
     try {
       await onResend();
       inputRefs.current[0]?.focus();
-    } catch (err: any) {
-      setError(err.message || 'Không thể gửi lại mã OTP. Vui lòng thử lại.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể gửi lại mã OTP. Vui lòng thử lại.');
     } finally {
       setIsResending(false);
     }

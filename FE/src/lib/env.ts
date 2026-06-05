@@ -13,7 +13,7 @@
  */
 export const API_URL = 
   (typeof window !== 'undefined' 
-    ? (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_API_URL 
+    ? (window as unknown as { __NEXT_DATA__?: { env?: { NEXT_PUBLIC_API_URL?: string } } }).__NEXT_DATA__?.env?.NEXT_PUBLIC_API_URL 
     : null) ||
   process.env.NEXT_PUBLIC_API_URL || 
   'http://localhost:9000/api';

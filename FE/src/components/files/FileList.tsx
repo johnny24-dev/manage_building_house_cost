@@ -159,7 +159,7 @@ export default function FileList({
       >
         <div className="space-y-4">
           <p className="text-gray-600">
-            Bạn có chắc chắn muốn xóa file <span className="font-semibold text-gray-900">"{deleteConfirm?.name}"</span>?
+            Bạn có chắc chắn muốn xóa file <span className="font-semibold text-gray-900">&quot;{deleteConfirm?.name}&quot;</span>?
           </p>
           <p className="text-sm text-red-600">
             Hành động này không thể hoàn tác.

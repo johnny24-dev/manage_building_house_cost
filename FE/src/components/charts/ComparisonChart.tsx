@@ -19,12 +19,22 @@ const formatCurrency = (value: number) => {
   return `${(value / 1000000).toFixed(0)}M`;
 };
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    name: string;
+    value: number;
+    color: string;
+  }>;
+  label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (!active || !payload || !payload.length) return null;
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-lg min-w-[220px]">
       <p className="text-sm font-semibold text-gray-900 mb-2">{label}</p>
-      {payload.map((entry: any, index: number) => (
+      {payload.map((entry, index: number) => (
         <div
           key={index}
           className="flex items-center justify-between text-xs text-gray-600 mb-1 last:mb-0"

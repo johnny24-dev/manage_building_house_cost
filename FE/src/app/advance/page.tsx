@@ -98,12 +98,12 @@ export default function AdvancePage() {
       ]);
       setAdvances(advancesResponse.data);
       setCategories(categoriesResponse.data);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error loading data:', error);
         showToast({
           type: 'error',
           title: 'Không thể tải dữ liệu tạm ứng',
-          description: error.message,
+          description: error instanceof Error ? error.message : 'Đã xảy ra lỗi không xác định',
         });
     } finally {
       setIsLoading(false);
@@ -199,8 +199,8 @@ export default function AdvancePage() {
       } catch (error) {
         console.error('Error refreshing advances:', error);
       }
-    } catch (error: any) {
-      const errorMessage = error.message || 'Không thể lưu phiếu tạm ứng';
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Không thể lưu phiếu tạm ứng';
       if (errorMessage.includes('403') || errorMessage.includes('quyền')) {
         showToast({
           type: 'warning',
@@ -239,8 +239,8 @@ export default function AdvancePage() {
       // Reload để đảm bảo data sync
       const response = await advanceService.getAdvances();
       setAdvances(response.data);
-    } catch (error: any) {
-      const errorMessage = error.message || 'Không thể xóa phiếu tạm ứng';
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Không thể xóa phiếu tạm ứng';
       if (errorMessage.includes('403') || errorMessage.includes('quyền')) {
         showToast({
           type: 'warning',

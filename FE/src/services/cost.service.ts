@@ -40,7 +40,7 @@ const costService = {
       });
       return response;
     } catch (error) {
-      const axiosError = error as AxiosError<ApiResponse<any>>;
+      const axiosError = error as AxiosError<ApiResponse<unknown>>;
       if (axiosError.response?.status === 403) {
         throw new Error('Bạn không có quyền tạo chi phí. Chỉ super admin mới có quyền thực hiện.');
       }
@@ -59,7 +59,7 @@ const costService = {
       });
       return response;
     } catch (error) {
-      const axiosError = error as AxiosError<ApiResponse<any>>;
+      const axiosError = error as AxiosError<ApiResponse<unknown>>;
       if (axiosError.response?.status === 403) {
         throw new Error('Bạn không có quyền cập nhật chi phí. Chỉ super admin mới có quyền thực hiện.');
       }
@@ -75,7 +75,7 @@ const costService = {
     try {
       await apiClient.delete(`/costs/${id}`);
     } catch (error) {
-      const axiosError = error as AxiosError<ApiResponse<any>>;
+      const axiosError = error as AxiosError<ApiResponse<unknown>>;
       if (axiosError.response?.status === 403) {
         throw new Error('Bạn không có quyền xóa chi phí. Chỉ super admin mới có quyền thực hiện.');
       }

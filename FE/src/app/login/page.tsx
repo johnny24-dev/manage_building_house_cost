@@ -28,14 +28,14 @@ export default function LoginPage() {
     );
   }
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: { email: string; password: string }) => {
     setIsLoading(true);
     setError('');
 
     try {
       await login(data.email, data.password);
-    } catch (err: any) {
-      setError(err.message || 'Đăng nhập thất bại. Vui lòng thử lại.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Đăng nhập thất bại. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }

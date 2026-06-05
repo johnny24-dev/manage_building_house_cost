@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         throw new Error('Đăng nhập thất bại. Phản hồi không hợp lệ.');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Login error:', error);
       throw error;
     }
@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         throw new Error('Không thể gửi mã OTP. Phản hồi không hợp lệ.');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Send OTP error:', error);
       throw error;
     }
@@ -98,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         throw new Error('Đăng ký thất bại. Phản hồi không hợp lệ.');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Register error:', error);
       throw error;
     }
@@ -112,7 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         throw new Error('Không thể gửi mã OTP. Phản hồi không hợp lệ.');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Send forgot password OTP error:', error);
       throw error;
     }
@@ -121,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const resetPassword = async (email: string, newPassword: string, otpCode: string) => {
     try {
       await authService.resetPassword(email, newPassword, otpCode);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Reset password error:', error);
       throw error;
     }

@@ -35,7 +35,7 @@ export default function RegisterPage() {
     );
   }
 
-  const handleFormSubmit = async (data: any) => {
+  const handleFormSubmit = async (data: { email: string; password: string }) => {
     setIsLoading(true);
     setError('');
 
@@ -46,8 +46,8 @@ export default function RegisterPage() {
       setPassword(data.password);
       setOtpExpiresAt(otpResponse.expiresAt);
       setStep('otp');
-    } catch (err: any) {
-      setError(err.message || 'Không thể gửi mã OTP. Vui lòng thử lại.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể gửi mã OTP. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
@@ -59,8 +59,8 @@ export default function RegisterPage() {
 
     try {
       await register(email, password, otpCode);
-    } catch (err: any) {
-      setError(err.message || 'Xác thực OTP thất bại. Vui lòng thử lại.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Xác thực OTP thất bại. Vui lòng thử lại.');
       throw err;
     } finally {
       setIsLoading(false);
@@ -71,8 +71,8 @@ export default function RegisterPage() {
     try {
       const otpResponse = await sendRegisterOTP(email);
       setOtpExpiresAt(otpResponse.expiresAt);
-    } catch (err: any) {
-      throw new Error(err.message || 'Không thể gửi lại mã OTP. Vui lòng thử lại.');
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Không thể gửi lại mã OTP. Vui lòng thử lại.');
     }
   };
 

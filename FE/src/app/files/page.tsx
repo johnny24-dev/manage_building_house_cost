@@ -43,12 +43,12 @@ export default function FilesPage() {
     try {
       const response = await fileService.getFiles();
       setFiles(response.data);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error loading files:', error);
         showToast({
           type: 'error',
           title: 'Không thể tải danh sách file',
-          description: error.message,
+          description: error instanceof Error ? error.message : 'Đã xảy ra lỗi không xác định',
         });
     } finally {
       setIsLoading(false);
@@ -80,8 +80,8 @@ export default function FilesPage() {
         title: 'Upload thành công',
         description: response.data.name,
       });
-    } catch (error: any) {
-      const errorMessage = error.message || 'Không thể upload file';
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Không thể upload file';
       if (errorMessage.includes('403') || errorMessage.includes('quyền')) {
         showToast({
           type: 'warning',
@@ -115,8 +115,8 @@ export default function FilesPage() {
         type: 'success',
         title: 'Đã xóa file thiết kế',
       });
-    } catch (error: any) {
-      const errorMessage = error.message || 'Không thể xóa file';
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Không thể xóa file';
       if (errorMessage.includes('403') || errorMessage.includes('quyền')) {
         showToast({
           type: 'warning',

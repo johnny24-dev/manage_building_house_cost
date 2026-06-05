@@ -37,7 +37,7 @@ const categoryService = {
       const response = await apiClient.post<ApiResponse<CategoryGroup>>('/cost-categories', data);
       return response;
     } catch (error) {
-      const axiosError = error as AxiosError<ApiResponse<any>>;
+      const axiosError = error as AxiosError<ApiResponse<unknown>>;
       if (axiosError.response?.status === 403) {
         throw new Error('Bạn không có quyền tạo hạng mục. Chỉ super admin mới có quyền thực hiện.');
       }
@@ -54,7 +54,7 @@ const categoryService = {
       const response = await apiClient.put<ApiResponse<CategoryGroup>>(`/cost-categories/${id}`, data);
       return response;
     } catch (error) {
-      const axiosError = error as AxiosError<ApiResponse<any>>;
+      const axiosError = error as AxiosError<ApiResponse<unknown>>;
       if (axiosError.response?.status === 403) {
         throw new Error('Bạn không có quyền cập nhật hạng mục. Chỉ super admin mới có quyền thực hiện.');
       }
@@ -70,7 +70,7 @@ const categoryService = {
     try {
       await apiClient.delete(`/cost-categories/${id}`);
     } catch (error) {
-      const axiosError = error as AxiosError<ApiResponse<any>>;
+      const axiosError = error as AxiosError<ApiResponse<unknown>>;
       if (axiosError.response?.status === 403) {
         throw new Error('Bạn không có quyền xóa hạng mục. Chỉ super admin mới có quyền thực hiện.');
       }

@@ -112,9 +112,9 @@ export default function AuthForm({ mode, onSubmit, isLoading: externalLoading, e
       await login(formData.email, formData.password);
       console.log('✅ AuthForm: Login successful, redirecting...');
       router.push('/');
-    } catch (err: any) {
+    } catch (err) {
       console.error('❌ AuthForm: Error:', err);
-      const errorMessage = err.message || 'Đăng nhập thất bại. Vui lòng thử lại.';
+      const errorMessage = err instanceof Error ? err.message : 'Đăng nhập thất bại. Vui lòng thử lại.';
       setError(errorMessage);
     } finally {
       setIsLoading(false);

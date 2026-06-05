@@ -87,13 +87,14 @@ export default function PDFViewer({ file, isOpen, onClose }: PDFViewerProps) {
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);
-    } catch (err: any) {
+    } catch (err) {
       console.error('[PDFViewer] Error loading PDF:', err);
-      setError(err.message || 'Không thể tải file PDF');
+      const msg = err instanceof Error ? err.message : 'Không thể tải file PDF';
+      setError(msg);
       showToast({
         type: 'error',
         title: 'Lỗi tải file',
-        description: err.message || 'Không thể tải file PDF',
+        description: msg,
       });
     } finally {
       setIsLoading(false);

@@ -106,7 +106,7 @@ export default function CategoryChart({ data = [] }: CategoryChartProps) {
             ))}
           </Pie>
           <Tooltip 
-            formatter={(value: number, name: string, props: any) => [
+            formatter={(value: number, name: string, props: { payload?: { name?: string } }) => [
               formatCurrency(value),
               props.payload?.name || name
             ]}

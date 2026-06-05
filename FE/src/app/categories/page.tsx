@@ -97,12 +97,12 @@ export default function CategoriesPage() {
       setGroups(groupsResponse.data);
       setCosts(costsResponse.data);
       setAdvances(advancesResponse.data);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error loading data:', error);
         showToast({
           type: 'error',
           title: 'Không thể tải dữ liệu hạng mục',
-          description: error.message,
+          description: error instanceof Error ? error.message : 'Đã xảy ra lỗi không xác định',
         });
     } finally {
       setIsLoading(false);
@@ -154,8 +154,8 @@ export default function CategoriesPage() {
           title: 'Đã xóa nhóm',
           description: group.name,
         });
-      } catch (error: any) {
-        const errorMessage = error.message || 'Không thể xóa nhóm';
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Không thể xóa nhóm';
         if (errorMessage.includes('403') || errorMessage.includes('quyền')) {
           showToast({
             type: 'warning',
@@ -208,8 +208,8 @@ export default function CategoriesPage() {
         title: editingGroup ? 'Đã cập nhật nhóm' : 'Đã tạo nhóm mới',
         description: submitData.name,
       });
-    } catch (error: any) {
-      const errorMessage = error.message || 'Không thể lưu nhóm';
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Không thể lưu nhóm';
       if (errorMessage.includes('403') || errorMessage.includes('quyền')) {
         showToast({
           type: 'warning',

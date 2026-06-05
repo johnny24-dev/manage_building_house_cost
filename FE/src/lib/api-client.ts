@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig, AxiosRequestConfig } from 'axios';
 import { API_URL } from './env';
 
 /**
@@ -112,7 +112,7 @@ class ApiClient {
   /**
    * GET request
    */
-  async get<T>(endpoint: string, config?: any): Promise<T> {
+  async get<T>(endpoint: string, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.client.get<T>(endpoint, config);
     return response.data;
   }
@@ -121,7 +121,7 @@ class ApiClient {
    * POST request
    * Config có thể chứa axios config như timeout, onUploadProgress, etc.
    */
-  async post<T>(endpoint: string, data?: any, config?: any): Promise<T> {
+  async post<T>(endpoint: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.client.post<T>(endpoint, data, config);
     return response.data;
   }
@@ -129,7 +129,7 @@ class ApiClient {
   /**
    * PUT request
    */
-  async put<T>(endpoint: string, data?: any, config?: any): Promise<T> {
+  async put<T>(endpoint: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.client.put<T>(endpoint, data, config);
     return response.data;
   }
@@ -137,7 +137,7 @@ class ApiClient {
   /**
    * DELETE request
    */
-  async delete<T>(endpoint: string, config?: any): Promise<T> {
+  async delete<T>(endpoint: string, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.client.delete<T>(endpoint, config);
     return response.data;
   }
@@ -145,7 +145,7 @@ class ApiClient {
   /**
    * PATCH request
    */
-  async patch<T>(endpoint: string, data?: any, config?: any): Promise<T> {
+  async patch<T>(endpoint: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.client.patch<T>(endpoint, data, config);
     return response.data;
   }

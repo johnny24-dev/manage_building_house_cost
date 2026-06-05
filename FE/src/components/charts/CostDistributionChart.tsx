@@ -65,7 +65,18 @@ const formatCurrency = (value: number) =>
     maximumFractionDigits: 0,
   }).format(value);
 
-const CustomTooltip = ({ active, payload }: any) => {
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    payload?: {
+      name: string;
+      value: number;
+      percentage: number;
+    };
+  }>;
+}
+
+const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   if (!active || !payload || !payload.length) return null;
   const item = payload[0]?.payload;
   return (

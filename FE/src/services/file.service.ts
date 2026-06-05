@@ -69,7 +69,7 @@ const fileService = {
       });
       return response;
     } catch (error) {
-      const axiosError = error as AxiosError<ApiResponse<any>>;
+      const axiosError = error as AxiosError<ApiResponse<unknown>>;
       if (axiosError.response?.status === 403) {
         throw new Error('Bạn không có quyền upload file. Chỉ super admin mới có quyền thực hiện.');
       }
@@ -91,7 +91,7 @@ const fileService = {
     try {
       await apiClient.delete(`/designs/${id}`);
     } catch (error) {
-      const axiosError = error as AxiosError<ApiResponse<any>>;
+      const axiosError = error as AxiosError<ApiResponse<unknown>>;
       if (axiosError.response?.status === 403) {
         throw new Error('Bạn không có quyền xóa file. Chỉ super admin mới có quyền thực hiện.');
       }

@@ -131,8 +131,8 @@ export default function ForgotPasswordPage() {
       setTimeout(() => {
         inputRefs.current[0]?.focus();
       }, 100);
-    } catch (err: any) {
-      setError(err.message || 'Không thể gửi mã OTP. Vui lòng thử lại.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể gửi mã OTP. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
@@ -151,8 +151,8 @@ export default function ForgotPasswordPage() {
         type: 'success',
       });
       inputRefs.current[0]?.focus();
-    } catch (err: any) {
-      setError(err.message || 'Không thể gửi lại mã OTP. Vui lòng thử lại.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể gửi lại mã OTP. Vui lòng thử lại.');
     } finally {
       setIsResending(false);
     }
@@ -197,8 +197,8 @@ export default function ForgotPasswordPage() {
         type: 'success',
       });
       router.push('/login');
-    } catch (err: any) {
-      setError(err.message || 'Đặt lại mật khẩu thất bại. Vui lòng thử lại.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Đặt lại mật khẩu thất bại. Vui lòng thử lại.');
       setOtp(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
     } finally {

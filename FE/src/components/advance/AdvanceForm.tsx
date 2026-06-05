@@ -109,19 +109,30 @@ export default function AdvanceForm({
     setIsCameraModalOpen(false);
   };
 
+  const [prevId, setPrevId] = useState(initialData?.id);
+  const [prevBillImageUrl, setPrevBillImageUrl] = useState(initialData?.billImageUrl);
+
+  // Synchronize state on prop change during render to prevent set-state-in-effect warning
+  if (initialData?.id !== prevId || initialData?.billImageUrl !== prevBillImageUrl) {
+    setPrevId(initialData?.id);
+    setPrevBillImageUrl(initialData?.billImageUrl);
+    
+    const preview = initialData?.billImageUrl ? getBillImageUrl(initialData.billImageUrl) : null;
+    if (billImagePreview && billImagePreview.startsWith('blob:')) {
+      const urlToRevoke = billImagePreview;
+      setTimeout(() => URL.revokeObjectURL(urlToRevoke), 0);
+    }
+    
+    setBillImagePreview(preview);
+    setBillImageFile(null);
+    setBillImageRemoved(false);
+  }
+
   useEffect(() => {
     return () => {
       releasePreviewUrl(billImagePreview);
     };
   }, [billImagePreview]);
-
-  useEffect(() => {
-    const preview = initialData?.billImageUrl ? getBillImageUrl(initialData.billImageUrl) : null;
-    releasePreviewUrl(billImagePreview);
-    setBillImagePreview(preview);
-    setBillImageFile(null);
-    setBillImageRemoved(false);
-  }, [initialData?.id, initialData?.billImageUrl]);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};

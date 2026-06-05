@@ -41,11 +41,12 @@ export default function CameraCaptureModal({
           videoRef.current.srcObject = streamRef.current;
           await videoRef.current.play();
         }
-      } catch (err: any) {
+      } catch (err) {
         console.error('Không thể mở camera:', err);
         setError(
-          err?.message ||
-            'Không thể truy cập camera. Vui lòng kiểm tra quyền hoặc thử lại.'
+          err instanceof Error
+            ? err.message
+            : 'Không thể truy cập camera. Vui lòng kiểm tra quyền hoặc thử lại.'
         );
       } finally {
         setIsInitializing(false);
@@ -112,7 +113,7 @@ export default function CameraCaptureModal({
               videoRef.current.play();
             }
           })
-          .catch((err) => setError(err?.message || 'Không thể mở camera.'));
+          .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Không thể mở camera.'));
       }
     }, 200);
   };

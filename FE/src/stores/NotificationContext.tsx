@@ -31,10 +31,14 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const { showToast } = useToast();
   const { isAuthenticated } = useAuth();
 
+  // Reset notifications state synchronously during render when logged out to avoid setState inside useEffect
+  if (!isAuthenticated && notifications.length > 0) {
+    setNotifications([]);
+  }
+
   useEffect(() => {
     let isMounted = true;
     if (!isAuthenticated) {
-      setNotifications([]);
       eventSourceRef.current?.close();
       return;
     }

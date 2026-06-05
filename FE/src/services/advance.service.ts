@@ -20,6 +20,15 @@ export interface AdvancePayment {
   };
 }
 
+export interface AdvanceSummary {
+  totalAmount: number;
+  paidAmount: number;
+  plannedAmount: number;
+  totalTickets: number;
+  paidCount: number;
+  plannedCount: number;
+}
+
 export const CONSTRUCTION_PHASES = [
   { value: 'Đợt 1', label: 'Đợt 1' },
   { value: 'Đợt 2', label: 'Đợt 2' },
@@ -57,13 +66,16 @@ const buildFormData = (
 ) => {
   const formData = new FormData();
 
-  const appendValue = (key: string, value: any) => {
-    if (value === undefined) return;
-    if (value === null) {
+  const appendValue = (key: string, value: string | Blob | number | boolean | null | undefined) => {
+    if (value === undefined || value === null) {
       formData.append(key, '');
       return;
     }
-    formData.append(key, value);
+    if (value instanceof Blob) {
+      formData.append(key, value);
+    } else {
+      formData.append(key, String(value));
+    }
   };
 
   if (data.ticketName !== undefined) {
@@ -120,9 +132,9 @@ const advanceService = {
     }
   },
 
-  async getSummary(): Promise<ApiResponse<any>> {
+  async getSummary(): Promise<ApiResponse<AdvanceSummary>> {
     try {
-      const data = await apiClient.get<ApiResponse<any>>('/advance-payments/summary');
+      const data = await apiClient.get<ApiResponse<AdvanceSummary>>('/advance-payments/summary');
       return data;
     } catch (error) {
       const axiosError = error as AxiosError<{ message?: string; error?: string }>;

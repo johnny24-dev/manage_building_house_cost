@@ -31,7 +31,7 @@ const authService = {
       console.log('✅ Login successful:', data);
       return data;
     } catch (error) {
-      const axiosError = error as AxiosError<ApiResponse<any>>;
+      const axiosError = error as AxiosError<ApiResponse<unknown>>;
       console.error('❌ Login failed:', {
         status: axiosError.response?.status,
         data: axiosError.response?.data,
@@ -52,7 +52,7 @@ const authService = {
       console.log('✅ OTP sent successfully:', response);
       return response;
     } catch (error) {
-      const axiosError = error as AxiosError<ApiResponse<any>>;
+      const axiosError = error as AxiosError<ApiResponse<unknown>>;
       console.error('❌ Send OTP failed:', {
         status: axiosError.response?.status,
         data: axiosError.response?.data,
@@ -76,7 +76,7 @@ const authService = {
       console.log('✅ Register successful:', response);
       return response;
     } catch (error) {
-      const axiosError = error as AxiosError<ApiResponse<any>>;
+      const axiosError = error as AxiosError<ApiResponse<unknown>>;
       console.log('❌ Register failed:', {
         status: axiosError.response?.status,
         data: axiosError.response?.data,
@@ -105,7 +105,7 @@ const authService = {
       console.log('✅ Forgot password OTP sent successfully:', response);
       return response;
     } catch (error) {
-      const axiosError = error as AxiosError<ApiResponse<any>>;
+      const axiosError = error as AxiosError<ApiResponse<unknown>>;
       console.error('❌ Send forgot password OTP failed:', {
         status: axiosError.response?.status,
         data: axiosError.response?.data,
@@ -130,7 +130,7 @@ const authService = {
       console.log('✅ Password reset successful:', response);
       return response;
     } catch (error) {
-      const axiosError = error as AxiosError<ApiResponse<any>>;
+      const axiosError = error as AxiosError<ApiResponse<unknown>>;
       console.error('❌ Password reset failed:', {
         status: axiosError.response?.status,
         data: axiosError.response?.data,

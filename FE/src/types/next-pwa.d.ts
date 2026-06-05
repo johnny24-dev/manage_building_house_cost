@@ -5,13 +5,13 @@ declare module "next-pwa" {
     register?: boolean;
     skipWaiting?: boolean;
     disable?: boolean;
-    runtimeCaching?: any;
+    runtimeCaching?: unknown;
     buildExcludes?: (RegExp | string)[];
   };
   export default function withPWA(config?: NextPWAConfig): (nextConfig: NextConfig) => NextConfig;
 }
 
 declare module "next-pwa/cache" {
-  const runtimeCaching: any;
+  const runtimeCaching: unknown;
   export default runtimeCaching;
 }

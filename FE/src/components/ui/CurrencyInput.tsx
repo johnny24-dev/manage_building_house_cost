@@ -1,6 +1,6 @@
 'use client';
 
-import { ChangeEvent, useState, useEffect, useRef, InputHTMLAttributes } from 'react';
+import { ChangeEvent, useState, useRef, InputHTMLAttributes } from 'react';
 import Input from './Input';
 
 interface CurrencyInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type'> {
@@ -10,6 +10,22 @@ interface CurrencyInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>,
   onChange: (value: string) => void;
   placeholder?: string;
 }
+
+// Format số với dấu phẩy ngăn cách
+const formatNumber = (num: string | number): string => {
+  if (!num && num !== 0) return '';
+  const numStr = typeof num === 'number' ? num.toString() : num;
+  // Loại bỏ tất cả ký tự không phải số
+  const cleaned = numStr.replace(/\D/g, '');
+  if (!cleaned) return '';
+  // Format với dấu phẩy
+  return parseInt(cleaned, 10).toLocaleString('vi-VN');
+};
+
+// Parse số từ string đã format
+const parseNumber = (formatted: string): string => {
+  return formatted.replace(/\D/g, '');
+};
 
 /**
  * Component input số tiền với format tự động
@@ -27,35 +43,18 @@ export default function CurrencyInput({
   disabled,
   ...props
 }: CurrencyInputProps) {
-  const [displayValue, setDisplayValue] = useState('');
+  const [prevValue, setPrevValue] = useState(value);
+  const [displayValue, setDisplayValue] = useState(() => 
+    value !== undefined && value !== null && value !== '' ? formatNumber(value) : ''
+  );
   const inputRef = useRef<HTMLInputElement>(null);
   const cursorPositionRef = useRef<number>(0);
 
-  // Format số với dấu phẩy ngăn cách
-  const formatNumber = (num: string | number): string => {
-    if (!num && num !== 0) return '';
-    const numStr = typeof num === 'number' ? num.toString() : num;
-    // Loại bỏ tất cả ký tự không phải số
-    const cleaned = numStr.replace(/\D/g, '');
-    if (!cleaned) return '';
-    // Format với dấu phẩy
-    return parseInt(cleaned, 10).toLocaleString('vi-VN');
-  };
-
-  // Parse số từ string đã format
-  const parseNumber = (formatted: string): string => {
-    return formatted.replace(/\D/g, '');
-  };
-
-  // Khởi tạo display value từ value prop
-  useEffect(() => {
-    if (value !== undefined && value !== null && value !== '') {
-      const formatted = formatNumber(value);
-      setDisplayValue(formatted);
-    } else {
-      setDisplayValue('');
-    }
-  }, [value]);
+  // Synchronize state with value prop change during rendering
+  if (value !== prevValue) {
+    setPrevValue(value);
+    setDisplayValue(value !== undefined && value !== null && value !== '' ? formatNumber(value) : '');
+  }
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const input = e.target;

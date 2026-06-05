@@ -212,12 +212,12 @@ export default function CostsPage() {
         ]);
         setCosts(costsResponse.data);
         setCategories(categoriesResponse.data);
-      } catch (error: any) {
+      } catch (error) {
         console.error('Error loading data:', error);
         showToast({
           type: 'error',
           title: 'Không thể tải dữ liệu chi phí',
-          description: error.message,
+          description: error instanceof Error ? error.message : 'Đã xảy ra lỗi không xác định',
         });
       } finally {
         setIsLoading(false);
@@ -361,8 +361,8 @@ export default function CostsPage() {
           title: 'Đã xóa chi phí',
           description: cost.description,
         });
-      } catch (error: any) {
-        const errorMessage = error.message || 'Không thể xóa chi phí';
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Không thể xóa chi phí';
         if (errorMessage.includes('403') || errorMessage.includes('quyền')) {
           showToast({
             type: 'warning',
@@ -426,8 +426,8 @@ export default function CostsPage() {
         title: editingCost ? 'Đã cập nhật chi phí' : 'Đã thêm chi phí mới',
         description: submitData.description,
       });
-    } catch (error: any) {
-      const errorMessage = error.message || 'Không thể lưu chi phí';
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Không thể lưu chi phí';
       if (errorMessage.includes('403') || errorMessage.includes('quyền')) {
         showToast({
           type: 'warning',

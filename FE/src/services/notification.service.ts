@@ -9,7 +9,7 @@ export interface UserNotification {
   entityId?: string | null;
   action?: string | null;
   type?: 'info' | 'success' | 'warning' | 'error' | string;
-  metadata?: Record<string, any> | null;
+  metadata?: Record<string, unknown> | null;
   createdAt: string;
   isRead: boolean;
   readAt?: string | null;

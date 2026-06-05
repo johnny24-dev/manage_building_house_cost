@@ -82,9 +82,11 @@ export default function ReportsPage() {
     try {
       const response = await reportService.getReportSummary();
       setReport(response.data);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error loading report:', error);
-      setError(error.message || 'Không thể tải báo cáo');
+      setError(
+        error instanceof Error ? error.message : 'Không thể tải báo cáo'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -107,12 +109,12 @@ export default function ReportsPage() {
         title: 'Đã xuất báo cáo',
         description: 'File Excel đã được tải xuống thiết bị của bạn.',
       });
-    } catch (err: any) {
+    } catch (err) {
       console.error('Export report failed:', err);
       showToast({
         type: 'error',
         title: 'Không thể xuất báo cáo',
-        description: err.message || 'Vui lòng thử lại sau.',
+        description: err instanceof Error ? err.message : 'Vui lòng thử lại sau.',
       });
     } finally {
       setIsExporting(false);
