@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { advancePaymentService } from '../services/advancePayment.service';
+import { advancePaymentService, CreateAdvancePaymentDto, UpdateAdvancePaymentDto } from '../services/advancePayment.service';
 import { sendSuccess } from '../utils/response';
 import { SuccessCode } from '../constants/statusCodes';
 import { notificationService } from '../services/notification.service';
@@ -11,8 +11,8 @@ const buildPublicPath = (filePath?: string) => {
   return normalized.startsWith('/') ? normalized : `/${normalized}`;
 };
 
-const buildPayload = (req: Request, options?: { isUpdate?: boolean }) => {
-  const payload: any = {};
+const buildPayload = (req: Request, options?: { isUpdate?: boolean }): Partial<CreateAdvancePaymentDto & UpdateAdvancePaymentDto> => {
+  const payload: Partial<CreateAdvancePaymentDto & UpdateAdvancePaymentDto> = {};
 
   if (req.body.ticketName !== undefined) {
     payload.ticketName = req.body.ticketName;
@@ -65,7 +65,7 @@ const buildPayload = (req: Request, options?: { isUpdate?: boolean }) => {
 export class AdvancePaymentController {
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = buildPayload(req);
+      const data = buildPayload(req) as CreateAdvancePaymentDto;
       data.paymentDate = data.paymentDate || new Date();
       const payment = await advancePaymentService.create(data);
       notificationService.queueAdminAction({
@@ -111,7 +111,7 @@ export class AdvancePaymentController {
   static async update(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const data = buildPayload(req, { isUpdate: true });
+      const data = buildPayload(req, { isUpdate: true }) as UpdateAdvancePaymentDto;
       const payment = await advancePaymentService.update(id, data);
       notificationService.queueAdminAction({
         action: 'update',

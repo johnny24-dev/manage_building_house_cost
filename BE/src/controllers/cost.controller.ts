@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { costService } from '../services/cost.service';
+import { costService, CreateCostDto, UpdateCostDto } from '../services/cost.service';
 import { sendSuccess } from '../utils/response';
 import { SuccessCode } from '../constants/statusCodes';
 import { notificationService } from '../services/notification.service';
@@ -13,13 +13,13 @@ const buildPublicPath = (filePath?: string) => {
   return normalized.startsWith('/') ? normalized : `/${normalized}`;
 };
 
-const buildPayload = (req: Request, options?: { isUpdate?: boolean }) => {
+const buildPayload = (req: Request, options?: { isUpdate?: boolean }): Partial<CreateCostDto & UpdateCostDto> => {
   const amount =
     req.body.amount !== undefined && req.body.amount !== null
       ? Number(req.body.amount)
       : undefined;
 
-  const payload: any = {
+  const payload: Partial<CreateCostDto & UpdateCostDto> = {
     description: req.body.description,
     amount,
     categoryId: req.body.categoryId,
@@ -39,7 +39,7 @@ const buildPayload = (req: Request, options?: { isUpdate?: boolean }) => {
 export class CostController {
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const cost = await costService.create(buildPayload(req));
+      const cost = await costService.create(buildPayload(req) as CreateCostDto);
       notificationService.queueAdminAction({
         action: 'create',
         entityName: 'chi phí',
@@ -87,7 +87,7 @@ export class CostController {
       const { id } = req.params;
       const cost = await costService.update(
         id,
-        buildPayload(req, { isUpdate: true })
+        buildPayload(req, { isUpdate: true }) as UpdateCostDto
       );
       notificationService.queueAdminAction({
         action: 'update',

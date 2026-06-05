@@ -6,12 +6,12 @@ import { ErrorCode, ErrorHttpStatus, ErrorMessages } from '../constants/statusCo
 export class AppError extends Error {
   public readonly code: ErrorCode;
   public readonly statusCode: number;
-  public readonly errors?: any[];
+  public readonly errors?: unknown[];
 
   constructor(
     code: ErrorCode,
     message?: string,
-    errors?: any[]
+    errors?: unknown[]
   ) {
     super(message || ErrorMessages[code]);
     this.name = 'AppError';

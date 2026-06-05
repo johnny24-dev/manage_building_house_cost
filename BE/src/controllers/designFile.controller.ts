@@ -163,9 +163,15 @@ export class DesignFileController {
       const { id } = req.params;
       const file = await designFileService.findById(id);
 
+      // Normalize file path - xử lý cả relative và absolute path
+      let filePath = file.filePath;
+      if (!path.isAbsolute(filePath)) {
+        filePath = path.join(process.cwd(), filePath);
+      }
+
       // Xóa file trên disk
-      if (fs.existsSync(file.filePath)) {
-        fs.unlinkSync(file.filePath);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
       }
 
       // Xóa record trong database

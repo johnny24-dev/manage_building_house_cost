@@ -4,8 +4,7 @@ import path from 'path';
 import { AppDataSource } from '../config/database';
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-const DB_PATH =
-  process.env.DB_PATH || path.join(__dirname, '../../database.sqlite');
+// Sẽ được lấy động từ AppDataSource.options.database lúc chạy backup
 const BACKUP_DIR =
   process.env.DB_BACKUP_DIR || path.join(__dirname, '../../backups');
 const RETENTION_DAYS = Number(process.env.DB_BACKUP_RETENTION_DAYS || '7');
@@ -48,9 +47,14 @@ const cleanupOldBackups = async () => {
 
 const performBackup = async () => {
   try {
-    if (!fs.existsSync(DB_PATH)) {
+    const dbPath = AppDataSource.options.database;
+    const targetDbPath = typeof dbPath === 'string'
+      ? dbPath
+      : process.env.DB_PATH || path.join(__dirname, '../../database.sqlite');
+
+    if (!fs.existsSync(targetDbPath)) {
       console.warn(
-        `⚠️  Không tìm thấy file database tại ${DB_PATH}, bỏ qua backup`
+        `⚠️  Không tìm thấy file database tại ${targetDbPath}, bỏ qua backup`
       );
       return;
     }

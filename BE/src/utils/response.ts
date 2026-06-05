@@ -11,7 +11,7 @@ import {
 /**
  * Interface cho response thành công
  */
-export interface SuccessResponse<T = any> {
+export interface SuccessResponse<T = unknown> {
   success: true;
   code: SuccessCode;
   message: string;
@@ -26,14 +26,14 @@ export interface ErrorResponse {
   success: false;
   code: ErrorCode;
   message: string;
-  errors?: any[];
+  errors?: unknown[];
   timestamp?: string;
 }
 
 /**
  * Tạo response thành công
  */
-export const sendSuccess = <T = any>(
+export const sendSuccess = <T = unknown>(
   res: Response,
   code: SuccessCode,
   data?: T,
@@ -56,7 +56,7 @@ export const sendSuccess = <T = any>(
 export const sendError = (
   res: Response,
   code: ErrorCode,
-  errors?: any[],
+  errors?: unknown[],
   customMessage?: string
 ): Response => {
   const response: ErrorResponse = {
@@ -75,24 +75,37 @@ export const sendError = (
  */
 export const sendErrorFromException = (
   res: Response,
-  error: Error | any,
+  error: unknown,
   defaultCode: ErrorCode = ErrorCode.INTERNAL_SERVER_ERROR
 ): Response => {
   // Nếu error có code property (từ AppError)
-  if (error.code && Object.values(ErrorCode).includes(error.code)) {
-    return sendError(res, error.code, error.errors, error.message);
+  if (error && typeof error === 'object' && 'code' in error) {
+    const appErr = error as { code: ErrorCode; errors?: unknown[]; message?: string };
+    if (Object.values(ErrorCode).includes(appErr.code)) {
+      return sendError(res, appErr.code, appErr.errors, appErr.message);
+    }
   }
 
   // Xử lý các loại lỗi phổ biến
-  if (error.name === 'ValidationError') {
-    return sendError(res, ErrorCode.VALIDATION_ERROR, error.errors);
-  }
+  if (error && typeof error === 'object' && 'name' in error) {
+    const namedErr = error as { name: string; errors?: unknown[]; message?: string };
+    if (namedErr.name === 'ValidationError') {
+      return sendError(res, ErrorCode.VALIDATION_ERROR, namedErr.errors);
+    }
 
-  if (error.name === 'UnauthorizedError') {
-    return sendError(res, ErrorCode.UNAUTHORIZED);
+    if (namedErr.name === 'UnauthorizedError') {
+      return sendError(res, ErrorCode.UNAUTHORIZED);
+    }
+
+    // Lỗi mặc định
+    return sendError(res, defaultCode, undefined, namedErr.message);
   }
 
   // Lỗi mặc định
-  return sendError(res, defaultCode, undefined, error.message);
+  return sendError(
+    res,
+    defaultCode,
+    undefined,
+    error instanceof Error ? error.message : String(error)
+  );
 };
-

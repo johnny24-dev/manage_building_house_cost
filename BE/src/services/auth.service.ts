@@ -4,7 +4,7 @@ import { AppError } from '../utils/AppError';
 import { ErrorCode } from '../constants/statusCodes';
 import { AppDataSource } from '../config/database';
 import { User, UserRole } from '../entities/User.entity';
-import { sendOTP, verifyOTP, isOTPVerified } from './otp.service';
+import { sendOTP, verifyOTP } from './otp.service';
 
 export interface LoginCredentials {
   email: string;
